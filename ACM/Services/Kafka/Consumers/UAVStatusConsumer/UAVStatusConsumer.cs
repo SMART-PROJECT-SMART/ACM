@@ -11,7 +11,7 @@ namespace ACM.Services.Kafka.Consumers.UAVStatusConsumer
     {
         private readonly IConsumer<string, string> _kafkaConsumer;
         private readonly int _consumeTimeoutMs;
-        private bool _isDisposed;
+        private readonly CancellationTokenSource _disposeCts;
 
         public UAVStatusConsumer(IOptions<KafkaConfiguration> kafkaOptions)
         {
@@ -22,6 +22,7 @@ namespace ACM.Services.Kafka.Consumers.UAVStatusConsumer
                 GroupId = kafkaConfiguration.GroupId,
                 AutoOffsetReset = AutoOffsetReset.Latest,
             };
+            _disposeCts = new CancellationTokenSource();
 
             _kafkaConsumer = new ConsumerBuilder<string, string>(config)
                 .SetKeyDeserializer(Deserializers.Utf8)
@@ -29,26 +30,29 @@ namespace ACM.Services.Kafka.Consumers.UAVStatusConsumer
                 .Build();
             _kafkaConsumer.Subscribe(kafkaConfiguration.StatusUpdateTopic);
             _consumeTimeoutMs = kafkaConfiguration.ConsumeTimeoutMs;
-            _isDisposed = false;
         }
 
-        public IEnumerable<UAVStatusData> ConsumeUAVStatus(CancellationToken cancellationToken = default)
+        public IEnumerable<UAVStatusData> ConsumeUAVStatus(
+            CancellationToken cancellationToken = default
+        )
         {
-            if (_isDisposed)
-                return [];
             try
             {
-                using CancellationTokenSource timeoutCts = new(TimeSpan.FromMilliseconds(_consumeTimeoutMs));
-                using CancellationTokenSource linkedCts = CancellationTokenSource.CreateLinkedTokenSource(
-                    cancellationToken, timeoutCts.Token
-                );
+                using CancellationTokenSource linkedCts =
+                    CancellationTokenSource.CreateLinkedTokenSource(
+                        _disposeCts.Token,
+                        cancellationToken
+                    );
+                linkedCts.CancelAfter(_consumeTimeoutMs);
 
                 ConsumeResult<string, string> uavsStatus = _kafkaConsumer.Consume(linkedCts.Token);
 
                 if (uavsStatus?.Message?.Value is null)
                     return [];
 
-                UAVStatusData? statusData = JsonConvert.DeserializeObject<UAVStatusData>(uavsStatus.Message.Value);
+                UAVStatusData? statusData = JsonConvert.DeserializeObject<UAVStatusData>(
+                    uavsStatus.Message.Value
+                );
 
                 return statusData is not null ? [statusData] : [];
             }
@@ -60,9 +64,8 @@ namespace ACM.Services.Kafka.Consumers.UAVStatusConsumer
 
         public void Dispose()
         {
-            if (_isDisposed)
-                return;
-            _isDisposed = true;
+            _disposeCts.Cancel();
+            _disposeCts.Dispose();
             _kafkaConsumer.Unassign();
             _kafkaConsumer.Close();
             _kafkaConsumer.Dispose();
