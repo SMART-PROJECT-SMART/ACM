@@ -35,6 +35,9 @@ namespace ACM.Extentions
             services.Configure<DeviceManagerConfiguration>(
                 configuration.GetSection(ACMConstants.Configuration.DEVICE_MANAGER_CONFIG_SECTION)
             );
+            services.Configure<QuartzConfiguration>(
+                configuration.GetSection(ACMConstants.Configuration.QUARTZ_CONFIG_SECTION)
+            );
             return services;
         }
 
