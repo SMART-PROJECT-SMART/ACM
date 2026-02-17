@@ -30,10 +30,10 @@ namespace ACM.Extentions
         public static IServiceCollection AddSleeveServices(this IServiceCollection services)
         {
             services.AddSingleton<ISleeveManager, SleeveManager>();
-            services.AddSingleton<ISleeveChangeHandler, SleeveCreatedHandler>();
-            services.AddSingleton<ISleeveChangeHandler, SleeveUpdatedHandler>();
-            services.AddSingleton<ISleeveChangeHandler, SleeveDeletedHandler>();
-            services.AddSingleton<ISleeveChangeHandlerFactory, SleeveChangeHandlerFactory>();
+            services.AddScoped<ISleeveChangeHandler, SleeveCreatedHandler>();
+            services.AddScoped<ISleeveChangeHandler, SleeveUpdatedHandler>();
+            services.AddScoped<ISleeveChangeHandler, SleeveDeletedHandler>();
+            services.AddScoped<ISleeveChangeHandlerFactory, SleeveChangeHandlerFactory>();
             services.AddHostedService<StartUpSleeveFetcher>();
             return services;
         }

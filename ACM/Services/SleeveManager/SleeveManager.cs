@@ -1,4 +1,4 @@
-﻿using System.Collections.Concurrent;
+using System.Collections.Concurrent;
 using ACM.Extentions;
 using ACM.Models;
 using ACM.Models.Dto;
