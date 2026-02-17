@@ -21,9 +21,17 @@ namespace ACM.Extentions
             return services;
         }
 
-        public static IServiceCollection AddAppConfiguration(this IServiceCollection services, IConfiguration configuration)
+        public static IServiceCollection AddAppConfiguration(
+            this IServiceCollection services,
+            IConfiguration configuration
+        )
         {
-            services.Configure<DeviceManagerConfiguration>(configuration.GetSection(ACMConstants.Configuration.DEVICE_MANAGER_CONFIG_SECTION));
+            services.Configure<KafkaConfiguration>(
+                configuration.GetSection(ACMConstants.Configuration.KAFKA_CONFIG_SECTION)
+            );
+            services.Configure<DeviceManagerConfiguration>(
+                configuration.GetSection(ACMConstants.Configuration.DEVICE_MANAGER_CONFIG_SECTION)
+            );
             return services;
         }
 
@@ -38,16 +46,22 @@ namespace ACM.Extentions
             return services;
         }
 
-        public static IServiceCollection AddDeviceManagerClient(this IServiceCollection services, IConfiguration configuration)
+        public static IServiceCollection AddDeviceManagerClient(
+            this IServiceCollection services,
+            IConfiguration configuration
+        )
         {
             DeviceManagerConfiguration config = configuration
                 .GetSection(ACMConstants.Configuration.DEVICE_MANAGER_CONFIG_SECTION)
                 .Get<DeviceManagerConfiguration>()!;
 
-            services.AddHttpClient(ACMConstants.HttpClients.DEVICE_MANAGER_HTTP_CLIENT, client =>
-            {
-                client.BaseAddress = new Uri(config.BaseUrl);
-            });
+            services.AddHttpClient(
+                ACMConstants.HttpClients.DEVICE_MANAGER_HTTP_CLIENT,
+                client =>
+                {
+                    client.BaseAddress = new Uri(config.BaseUrl);
+                }
+            );
 
             services.AddScoped<IDeviceManagerClient, DeviceManagerClient>();
             return services;
