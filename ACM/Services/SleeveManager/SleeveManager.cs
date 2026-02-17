@@ -1,4 +1,5 @@
 ﻿using System.Collections.Concurrent;
+using ACM.Extentions;
 using ACM.Models;
 using ACM.Models.Dto;
 using ACM.Services.SleeveManager.Interfaces;
@@ -8,13 +9,15 @@ namespace ACM.Services.SleeveManager
     public class SleeveManager : ISleeveManager
     {
         private readonly ConcurrentDictionary<string, Sleeve> _sleevesByName;
+
         public SleeveManager()
         {
             _sleevesByName = new ConcurrentDictionary<string, Sleeve>();
         }
+
         public void DeleteSleeves(DeleteSleeveDto deleteSleeveDto)
         {
-            foreach(string sleeveName in deleteSleeveDto.SleevsToDelete)
+            foreach (string sleeveName in deleteSleeveDto.SleevsToDelete)
             {
                 _sleevesByName.TryRemove(sleeveName, out _);
             }
@@ -22,9 +25,9 @@ namespace ACM.Services.SleeveManager
 
         public void SaveSleevs(IEnumerable<SleeveDeviceManagerDto> sleeves)
         {
-            foreach(SleeveDeviceManagerDto sleeve in sleeves)
+            foreach (SleeveDeviceManagerDto sleeveDto in sleeves)
             {
-                _sleevesByName.TryAdd(sleeve.Name, new Sleeve(sleeve.Name, sleeve.Location, sleeve.PortNumbers));
+                _sleevesByName.TryAdd(sleeveDto.Name, sleeveDto.ToModel());
             }
         }
 
