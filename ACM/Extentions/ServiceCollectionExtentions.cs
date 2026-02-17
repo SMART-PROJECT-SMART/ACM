@@ -2,6 +2,7 @@
 using ACM.Models.Config;
 using ACM.Services.DeviceManagerClient;
 using ACM.Services.DeviceManagerClient.Interfaces;
+using ACM.Services.Kafka.Consumers.StatusConsumer.Interfaces;
 using ACM.Services.SleeveChangeHandlers;
 using ACM.Services.SleeveChangeHandlers.Handlers;
 using ACM.Services.SleeveChangeHandlers.Interfaces;
@@ -43,6 +44,12 @@ namespace ACM.Extentions
             services.AddScoped<ISleeveChangeHandler, SleeveDeletedHandler>();
             services.AddScoped<ISleeveChangeHandlerFactory, SleeveChangeHandlerFactory>();
             services.AddHostedService<StartUpSleeveFetcher>();
+            return services;
+        }
+
+        public static IServiceCollection AddKafkaServices(this IServiceCollection services)
+        {
+            services.AddSingleton<IUAVStatusConsumer, IUAVStatusConsumer>();
             return services;
         }
 
