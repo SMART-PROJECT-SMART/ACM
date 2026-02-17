@@ -1,9 +1,9 @@
-﻿using Confluent.Kafka;
+﻿using ACM.Models.Dto;
 
 namespace ACM.Services.Kafka.Consumers.StatusConsumer.Interfaces
 {
     public interface IUAVStatusConsumer : IDisposable
     {
-        public ConsumeResult<string, string> ConsumeUAVStatus();
+        public IEnumerable<UAVStatusData> ConsumeUAVStatus(CancellationToken cancellationToken = default);
     }
 }

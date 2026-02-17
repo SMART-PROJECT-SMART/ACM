@@ -1,7 +1,9 @@
 ﻿using ACM.Models.Config;
+using ACM.Models.Dto;
 using ACM.Services.Kafka.Consumers.StatusConsumer.Interfaces;
 using Confluent.Kafka;
 using Microsoft.Extensions.Options;
+using Newtonsoft.Json;
 
 namespace ACM.Services.Kafka.Consumers.UAVStatusConsumer
 {
@@ -30,17 +32,29 @@ namespace ACM.Services.Kafka.Consumers.UAVStatusConsumer
             _isDisposed = false;
         }
 
-        public ConsumeResult<string, string> ConsumeUAVStatus()
+        public IEnumerable<UAVStatusData> ConsumeUAVStatus(CancellationToken cancellationToken = default)
         {
             if (_isDisposed)
-                return null;
+                return [];
             try
             {
-                return _kafkaConsumer.Consume(TimeSpan.FromMilliseconds(_consumeTimeoutMs));
+                using CancellationTokenSource timeoutCts = new(TimeSpan.FromMilliseconds(_consumeTimeoutMs));
+                using CancellationTokenSource linkedCts = CancellationTokenSource.CreateLinkedTokenSource(
+                    cancellationToken, timeoutCts.Token
+                );
+
+                ConsumeResult<string, string> uavsStatus = _kafkaConsumer.Consume(linkedCts.Token);
+
+                if (uavsStatus?.Message?.Value is null)
+                    return [];
+
+                UAVStatusData? statusData = JsonConvert.DeserializeObject<UAVStatusData>(uavsStatus.Message.Value);
+
+                return statusData is not null ? [statusData] : [];
             }
-            catch (Exception)
+            catch (OperationCanceledException)
             {
-                return null;
+                return [];
             }
         }
 

@@ -2,11 +2,13 @@ using ACM.Extentions;
 
 var builder = WebApplication.CreateBuilder(args);
 
-builder.Services
-    .AddWebApi()
+builder
+    .Services.AddWebApi()
     .AddAppConfiguration(builder.Configuration)
     .AddSleeveServices()
-    .AddDeviceManagerClient(builder.Configuration);
+    .AddDeviceManagerClient(builder.Configuration)
+    .AddKafkaServices()
+    .AddQuartzServices();
 
 var app = builder.Build();
 

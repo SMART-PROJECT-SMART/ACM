@@ -3,6 +3,7 @@ using ACM.Models.Config;
 using ACM.Services.DeviceManagerClient;
 using ACM.Services.DeviceManagerClient.Interfaces;
 using ACM.Services.Kafka.Consumers.StatusConsumer.Interfaces;
+using ACM.Services.Kafka.Consumers.UAVStatusConsumer;
 using ACM.Services.SleeveChangeHandlers;
 using ACM.Services.SleeveChangeHandlers.Handlers;
 using ACM.Services.SleeveChangeHandlers.Interfaces;
@@ -10,6 +11,7 @@ using ACM.Services.SleeveManager;
 using ACM.Services.SleeveManager.Interfaces;
 using ACM.Services.StartUpSleeveFetcher;
 using ACM.Services.StartUpSleeveFetcher.Interfaces;
+using Quartz;
 
 namespace ACM.Extentions
 {
@@ -49,7 +51,7 @@ namespace ACM.Extentions
 
         public static IServiceCollection AddKafkaServices(this IServiceCollection services)
         {
-            services.AddSingleton<IUAVStatusConsumer, IUAVStatusConsumer>();
+            services.AddSingleton<IUAVStatusConsumer, UAVStatusConsumer>();
             return services;
         }
 
@@ -71,6 +73,20 @@ namespace ACM.Extentions
             );
 
             services.AddScoped<IDeviceManagerClient, DeviceManagerClient>();
+            return services;
+        }
+
+        public static IServiceCollection AddQuartzServices(this IServiceCollection services)
+        {
+            services.AddQuartz();
+            services.AddQuartzHostedService(q => q.WaitForJobsToComplete = true);
+            services.AddSingleton(provider =>
+                provider
+                    .GetRequiredService<ISchedulerFactory>()
+                    .GetScheduler()
+                    .GetAwaiter()
+                    .GetResult()
+            );
             return services;
         }
     }
