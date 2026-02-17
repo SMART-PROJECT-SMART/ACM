@@ -2,6 +2,9 @@
 using ACM.Models.Config;
 using ACM.Services.DeviceManagerClient;
 using ACM.Services.DeviceManagerClient.Interfaces;
+using ACM.Services.SleeveChangeHandlers;
+using ACM.Services.SleeveChangeHandlers.Handlers;
+using ACM.Services.SleeveChangeHandlers.Interfaces;
 using ACM.Services.SleeveManager;
 using ACM.Services.SleeveManager.Interfaces;
 using ACM.Services.StartUpSleeveFetcher;
@@ -27,6 +30,10 @@ namespace ACM.Extentions
         public static IServiceCollection AddSleeveServices(this IServiceCollection services)
         {
             services.AddSingleton<ISleeveManager, SleeveManager>();
+            services.AddSingleton<ISleeveChangeHandler, SleeveCreatedHandler>();
+            services.AddSingleton<ISleeveChangeHandler, SleeveUpdatedHandler>();
+            services.AddSingleton<ISleeveChangeHandler, SleeveDeletedHandler>();
+            services.AddSingleton<ISleeveChangeHandlerFactory, SleeveChangeHandlerFactory>();
             services.AddHostedService<StartUpSleeveFetcher>();
             return services;
         }
