@@ -2,8 +2,9 @@
 
 namespace ACM.Models.Dto
 {
-    public class DeleteSleeveDto {
+    public class DeleteSleeveDto
+    {
         [Required]
-        public IEnumerable<string> SleevsToDelete { get; set} 
+        public IEnumerable<string> SleevsToDelete { get; set; }
     }
 }

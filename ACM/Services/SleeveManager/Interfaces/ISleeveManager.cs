@@ -7,7 +7,6 @@ namespace ACM.Services.SleeveManager.Interfaces
     {
         public void SaveSleevs(IEnumerable<SleeveDeviceManagerDto> sleeves);
         public void DeleteSleeves(DeleteSleeveDto deleteSleeveDto);
-        public void UpdateSleeves();
-        public void ReassignSleeves(SleeveToTailIdAssignment sleeveToTailIdAssignment);
+        public void UpdateSleeves(UpdateSleeveDto updateSleeveDto);
     }
 }
