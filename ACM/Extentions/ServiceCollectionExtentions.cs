@@ -78,15 +78,10 @@ namespace ACM.Extentions
                 .GetSection(ACMConstants.Configuration.DEVICE_MANAGER_CONFIG_SECTION)
                 .Get<DeviceManagerConfiguration>()!;
 
-            services.AddHttpClient(
-                ACMConstants.HttpClients.DEVICE_MANAGER_HTTP_CLIENT,
-                client =>
-                {
-                    client.BaseAddress = new Uri(config.BaseUrl);
-                }
-            );
-
-            services.AddScoped<IDeviceManagerClient, DeviceManagerClient>();
+            services.AddHttpClient<IDeviceManagerClient, DeviceManagerClient>(client =>
+            {
+                client.BaseAddress = new Uri(config.BaseUrl);
+            });
             return services;
         }
 

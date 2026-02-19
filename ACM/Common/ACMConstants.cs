@@ -20,6 +20,8 @@ namespace ACM.Common
         {
             public const string GET_ALL_SLEEVES = "api/sleeve";
             public const string GET_SLEEVE_BY_NAME = "api/sleeve/{0}";
+            public const string ASSIGN_SLEEVE_TO_UAV = "api/sleeve/assign";
+            public const string RELEASE_SLEEVE_BY_TAIL_ID = "api/sleeve/release/{0}";
         }
 
         public static class SimulationApiEndpoints
