@@ -7,7 +7,9 @@ builder
     .AddAppConfiguration(builder.Configuration)
     .AddSleeveServices()
     .AddDeviceManagerClient(builder.Configuration)
+    .AddSimulatorClient(builder.Configuration)
     .AddKafkaServices()
+    .AddAssignmentServices()
     .AddQuartzServices();
 
 var app = builder.Build();

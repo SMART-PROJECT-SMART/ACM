@@ -562,3 +562,5 @@ FodyWeavers.xsd
 *.sln.iml
 .idea/
 .claude/
+
+.github/

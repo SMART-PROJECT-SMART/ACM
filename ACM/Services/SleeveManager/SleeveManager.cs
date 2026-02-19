@@ -15,6 +15,11 @@ namespace ACM.Services.SleeveManager
             _sleevesByName = new ConcurrentDictionary<string, Sleeve>();
         }
 
+        public IEnumerable<Sleeve> GetAllSleeves()
+        {
+            return _sleevesByName.Values;
+        }
+
         public void DeleteSleeves(DeleteSleeveDto deleteSleeveDto)
         {
             foreach (string sleeveName in deleteSleeveDto.SleevsToDelete)

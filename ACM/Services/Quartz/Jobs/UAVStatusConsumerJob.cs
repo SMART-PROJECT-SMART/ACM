@@ -1,24 +1,20 @@
-﻿using ACM.Models.Dto;
-using ACM.Services.Kafka.Consumers.StatusConsumer.Interfaces;
+using ACM.Services.AssignmentUpdate.Interfaces;
 using Quartz;
 
 namespace ACM.Services.Quartz.Jobs
 {
     public class UAVStatusConsumerJob : IJob
     {
-        private readonly IUAVStatusConsumer _uavStatusConsumer;
+        private readonly IAssignmentUpdateService _assignmentUpdateService;
 
-        public UAVStatusConsumerJob(IUAVStatusConsumer uavStatusConsumer)
+        public UAVStatusConsumerJob(IAssignmentUpdateService assignmentUpdateService)
         {
-            _uavStatusConsumer = uavStatusConsumer;
+            _assignmentUpdateService = assignmentUpdateService;
         }
 
-        public Task Execute(IJobExecutionContext context)
+        public async Task Execute(IJobExecutionContext context)
         {
-            IEnumerable<UAVStatusData> uavsStatusData = _uavStatusConsumer.ConsumeUAVStatus(
-                context.CancellationToken
-            );
-            return Task.CompletedTask;
+            await _assignmentUpdateService.RunAsync(context.CancellationToken);
         }
     }
 }

@@ -1,10 +1,10 @@
-﻿using Core.Models;
+using Core.Models;
 
 namespace ACM.Models.Dto
 {
     public class UAVStatusData
     {
-        int TailId { get; set; }
-        Location Location { get; set; }
+        public int TailId { get; set; }
+        public Location Location { get; set; }
     }
 }
