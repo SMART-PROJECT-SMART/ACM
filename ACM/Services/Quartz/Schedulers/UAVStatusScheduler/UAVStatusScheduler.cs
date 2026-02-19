@@ -1,4 +1,4 @@
-﻿using ACM.Models.Config;
+using ACM.Models.Config;
 using ACM.Services.Quartz.Jobs;
 using ACM.Services.Quartz.Schedulers.UAVStatusScheduler.Interfaces;
 using Microsoft.Extensions.Options;
@@ -15,6 +15,16 @@ namespace ACM.Services.Quartz.Schedulers.UAVStatusScheduler
         {
             _scheduler = scheduler;
             _quartzConfig = quartzOptions.Value;
+        }
+
+        public async Task StartAsync(CancellationToken cancellationToken)
+        {
+            await StartScheduler(_quartzConfig.UAVStatusJobInterval);
+        }
+
+        public async Task StopAsync(CancellationToken cancellationToken)
+        {
+            await StopScheduler();
         }
 
         public async Task StartScheduler(int intervalSeconds)

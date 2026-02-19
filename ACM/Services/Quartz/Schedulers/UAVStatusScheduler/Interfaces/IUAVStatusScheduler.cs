@@ -1,6 +1,6 @@
-﻿namespace ACM.Services.Quartz.Schedulers.UAVStatusScheduler.Interfaces
+namespace ACM.Services.Quartz.Schedulers.UAVStatusScheduler.Interfaces
 {
-    public interface IUAVStatusScheduler
+    public interface IUAVStatusScheduler : IHostedService
     {
         Task StartScheduler(int intervalSeconds);
         Task StopScheduler();

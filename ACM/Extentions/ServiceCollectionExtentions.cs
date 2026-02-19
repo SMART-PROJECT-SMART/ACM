@@ -12,6 +12,8 @@ using ACM.Services.ScoreCalculator;
 using ACM.Services.ScoreCalculator.Interfaces;
 using ACM.Services.SimulatorClient;
 using ACM.Services.SimulatorClient.Interfaces;
+using ACM.Services.Quartz.Schedulers.UAVStatusScheduler;
+using ACM.Services.Quartz.Schedulers.UAVStatusScheduler.Interfaces;
 using ACM.Services.SleeveChangeHandlers;
 using ACM.Services.SleeveChangeHandlers.Handlers;
 using ACM.Services.SleeveChangeHandlers.Interfaces;
@@ -120,6 +122,8 @@ namespace ACM.Extentions
                     .GetAwaiter()
                     .GetResult()
             );
+            services.AddSingleton<IUAVStatusScheduler, UAVStatusScheduler>();
+            services.AddHostedService(provider => provider.GetRequiredService<IUAVStatusScheduler>());
             return services;
         }
     }

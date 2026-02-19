@@ -39,6 +39,17 @@ namespace ACM.Services.AssignmentManager
             List<ChangedAssignmentDto> changedAssignments = CollectChangedAssignments(newAssignment);
             HashSet<int> removedTails = _tailIdToSleeve.Keys.Except(newAssignment.Keys).ToHashSet();
 
+            _logger.LogInformation(
+                "SetAssignment: {NewCount} UAVs in new assignment, {ChangedCount} changed, {RemovedCount} removed",
+                newAssignment.Count,
+                changedAssignments.Count,
+                removedTails.Count);
+
+            if (changedAssignments.Count == 0 && removedTails.Count == 0)
+            {
+                _logger.LogInformation("No assignment changes; nothing to notify");
+            }
+
             using (IServiceScope scope = _scopeFactory.CreateScope())
             {
                 IDeviceManagerClient deviceManagerClient = scope.ServiceProvider.GetRequiredService<IDeviceManagerClient>();
@@ -49,7 +60,22 @@ namespace ACM.Services.AssignmentManager
 
             foreach (ChangedAssignmentDto change in changedAssignments)
             {
-                await _simulatorClient.NotifyUavPortsChangedAsync(change.TailId, change.NewPorts, cancellationToken);
+                try
+                {
+                    await _simulatorClient.NotifyUavPortsChangedAsync(change.TailId, change.NewPorts, cancellationToken);
+                    _logger.LogInformation(
+                        "Notified simulator of port change for UAV tail {TailId}, sleeve {SleeveName}",
+                        change.TailId,
+                        change.SleeveName);
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogWarning(
+                        ex,
+                        "Failed to notify simulator of port change for UAV tail {TailId}, sleeve {SleeveName}",
+                        change.TailId,
+                        change.SleeveName);
+                }
             }
         }
 
@@ -84,6 +110,10 @@ namespace ACM.Services.AssignmentManager
                 try
                 {
                     await deviceManagerClient.AssignSleeveToUavAsync(change.TailId, change.SleeveName, cancellationToken);
+                    _logger.LogInformation(
+                        "Changed sleeve for UAV tail {TailId} to sleeve {SleeveName}",
+                        change.TailId,
+                        change.SleeveName);
                 }
                 catch (Exception ex)
                 {
@@ -96,6 +126,7 @@ namespace ACM.Services.AssignmentManager
                 try
                 {
                     await deviceManagerClient.ReleaseSleeveByTailIdAsync(tailId, cancellationToken);
+                    _logger.LogInformation("Released sleeve for UAV tail {TailId}", tailId);
                 }
                 catch (Exception ex)
                 {
