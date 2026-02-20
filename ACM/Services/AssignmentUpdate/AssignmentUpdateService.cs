@@ -83,7 +83,11 @@ namespace ACM.Services.AssignmentUpdate
                 newAssignment.Count,
                 string.Join("; ", newAssignment.Select(kv => $"TailId {kv.Key} -> {kv.Value.Name}"))
             );
-            await _assignmentManager.SetAssignmentAsync(newAssignment, cancellationToken);
+
+            Dictionary<int, int> currentTailToSleeveId = statusList
+                .ToDictionary(s => s.TailId, s => s.SleeveId);
+
+            await _assignmentManager.SetAssignmentAsync(newAssignment, currentTailToSleeveId, cancellationToken);
         }
     }
 }

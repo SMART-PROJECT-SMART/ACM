@@ -4,9 +4,9 @@ namespace ACM.Services.AssignmentManager.Interfaces
 {
     public interface IAssignmentManager
     {
-        IReadOnlyDictionary<int, Sleeve> GetCurrentAssignment();
         Task SetAssignmentAsync(
             IReadOnlyDictionary<int, Sleeve> newAssignment,
+            IReadOnlyDictionary<int, int> currentTailToSleeveId,
             CancellationToken cancellationToken = default);
     }
 }

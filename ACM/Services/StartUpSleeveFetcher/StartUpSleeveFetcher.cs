@@ -1,7 +1,8 @@
-﻿using ACM.Models.Dto;
+using ACM.Models.Dto;
 using ACM.Services.Clients.DeviceManagerClient.Interfaces;
 using ACM.Services.SleeveManager.Interfaces;
 using ACM.Services.StartUpSleeveFetcher.Interfaces;
+using Microsoft.Extensions.Logging;
 
 namespace ACM.Services.StartUpSleeveFetcher
 {
@@ -9,14 +10,17 @@ namespace ACM.Services.StartUpSleeveFetcher
     {
         private readonly ISleeveManager _sleeveManager;
         private readonly IServiceScopeFactory _serviceScopeFactory;
+        private readonly ILogger<StartUpSleeveFetcher> _logger;
 
         public StartUpSleeveFetcher(
             ISleeveManager sleeveManager,
-            IServiceScopeFactory serviceScopeFactory
+            IServiceScopeFactory serviceScopeFactory,
+            ILogger<StartUpSleeveFetcher> logger
         )
         {
             _sleeveManager = sleeveManager;
             _serviceScopeFactory = serviceScopeFactory;
+            _logger = logger;
         }
 
         public async Task StartAsync(CancellationToken cancellationToken)
@@ -28,7 +32,13 @@ namespace ACM.Services.StartUpSleeveFetcher
             IEnumerable<SleeveDeviceManagerDto> sleeves = await deviceManagerClient.GetSleevesAsync(
                 cancellationToken
             );
-            _sleeveManager.SaveSleevs(sleeves);
+            List<SleeveDeviceManagerDto> sleeveList = sleeves.ToList();
+            _logger.LogInformation(
+                "Fetched {Count} sleeves from Device Manager: {Details}",
+                sleeveList.Count,
+                string.Join(", ", sleeveList.Select(s => $"{s.Name} (Id={s.Id})"))
+            );
+            _sleeveManager.SaveSleevs(sleeveList);
         }
 
         public Task StopAsync(CancellationToken cancellationToken)

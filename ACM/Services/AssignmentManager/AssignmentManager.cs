@@ -1,4 +1,3 @@
-using System.Collections.Concurrent;
 using ACM.Models;
 using ACM.Models.Dto;
 using ACM.Services.AssignmentManager.Interfaces;
@@ -14,7 +13,6 @@ namespace ACM.Services.AssignmentManager
         private readonly IServiceScopeFactory _scopeFactory;
         private readonly ISimulatorClient _simulatorClient;
         private readonly ILogger<AssignmentManager> _logger;
-        private readonly ConcurrentDictionary<int, Sleeve> _tailIdToSleeve;
 
         public AssignmentManager(
             IServiceScopeFactory scopeFactory,
@@ -25,32 +23,26 @@ namespace ACM.Services.AssignmentManager
             _scopeFactory = scopeFactory;
             _simulatorClient = simulatorClient;
             _logger = logger;
-            _tailIdToSleeve = new ConcurrentDictionary<int, Sleeve>();
-        }
-
-        public IReadOnlyDictionary<int, Sleeve> GetCurrentAssignment()
-        {
-            return new Dictionary<int, Sleeve>(_tailIdToSleeve);
         }
 
         public async Task SetAssignmentAsync(
             IReadOnlyDictionary<int, Sleeve> newAssignment,
+            IReadOnlyDictionary<int, int> currentTailToSleeveId,
             CancellationToken cancellationToken = default
         )
         {
             List<ChangedAssignmentDto> changedAssignments = CollectChangedAssignments(
-                newAssignment
+                newAssignment,
+                currentTailToSleeveId
             );
-            HashSet<int> removedTails = _tailIdToSleeve.Keys.Except(newAssignment.Keys).ToHashSet();
 
             _logger.LogInformation(
-                "SetAssignment: {NewCount} UAVs in new assignment, {ChangedCount} changed, {RemovedCount} removed",
+                "SetAssignment: {NewCount} UAVs in new assignment, {ChangedCount} changed",
                 newAssignment.Count,
-                changedAssignments.Count,
-                removedTails.Count
+                changedAssignments.Count
             );
 
-            if (changedAssignments.Count == 0 && removedTails.Count == 0)
+            if (changedAssignments.Count == 0)
             {
                 _logger.LogInformation("No assignment changes; nothing to notify");
                 return;
@@ -62,12 +54,10 @@ namespace ACM.Services.AssignmentManager
                     scope.ServiceProvider.GetRequiredService<IDeviceManagerClient>();
                 await deviceManagerClient.ApplyAssignmentChangesAsync(
                     changedAssignments,
-                    removedTails,
+                    new HashSet<int>(),
                     cancellationToken
                 );
             }
-
-            UpdateInMemoryAssignment(newAssignment, removedTails);
 
             foreach (ChangedAssignmentDto change in changedAssignments)
             {
@@ -97,7 +87,8 @@ namespace ACM.Services.AssignmentManager
         }
 
         private List<ChangedAssignmentDto> CollectChangedAssignments(
-            IReadOnlyDictionary<int, Sleeve> newAssignment
+            IReadOnlyDictionary<int, Sleeve> newAssignment,
+            IReadOnlyDictionary<int, int> currentTailToSleeveId
         )
         {
             List<ChangedAssignmentDto> result = new();
@@ -113,10 +104,9 @@ namespace ACM.Services.AssignmentManager
                     continue;
                 }
 
-                if (
-                    !_tailIdToSleeve.TryGetValue(kv.Key, out Sleeve? currentSleeve)
-                    || currentSleeve.Id != kv.Value.Id
-                )
+                bool hasCurrentSleeve = currentTailToSleeveId.TryGetValue(kv.Key, out int currentSleeveId);
+
+                if (!hasCurrentSleeve || currentSleeveId != kv.Value.Id)
                 {
                     result.Add(
                         new ChangedAssignmentDto
@@ -131,22 +121,6 @@ namespace ACM.Services.AssignmentManager
             }
 
             return result;
-        }
-
-        private void UpdateInMemoryAssignment(
-            IReadOnlyDictionary<int, Sleeve> newAssignment,
-            HashSet<int> removedTails
-        )
-        {
-            foreach (KeyValuePair<int, Sleeve> kv in newAssignment)
-            {
-                _tailIdToSleeve[kv.Key] = kv.Value;
-            }
-
-            foreach (int tailId in removedTails)
-            {
-                _tailIdToSleeve.TryRemove(tailId, out _);
-            }
         }
     }
 }
