@@ -5,6 +5,6 @@ namespace ACM.Services.ScoreCalculator.Interfaces
 {
     public interface IScoreCalculator
     {
-        double GetScore(Location uavLocation, Sleeve sleeve);
+        int GetScore(Location uavLocation, Sleeve sleeve);
     }
 }

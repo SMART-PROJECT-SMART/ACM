@@ -7,11 +7,12 @@ namespace ACM.Services.ScoreCalculator
 {
     public class DistanceScoreCalculator : IScoreCalculator
     {
-        public double GetScore(Location uavLocation, Sleeve sleeve)
+        public int GetScore(Location uavLocation, Sleeve sleeve)
         {
             double distance = uavLocation.CalculateDistanceTo(sleeve.Location);
             double denominator = ACMConstants.Scoring.MIN_DISTANCE_DENOMINATOR + distance;
-            return 1.0 / denominator;
+            double score = 1.0 / denominator;
+            return (int)(score * ACMConstants.Scoring.SCORE_MAX_VALUE);
         }
     }
 }

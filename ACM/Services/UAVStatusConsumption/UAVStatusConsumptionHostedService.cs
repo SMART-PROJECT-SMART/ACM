@@ -9,18 +9,18 @@ namespace ACM.Services.UAVStatusConsumption
 {
     public class UAVStatusConsumptionHostedService : IUAVStatusConsumptionHostedService
     {
-        private readonly IServiceScopeFactory _scopeFactory;
+        private readonly IAssignmentUpdateService _assignmentUpdateService;
         private readonly IUAVStatusConsumer _uavStatusConsumer;
         private readonly ILogger<UAVStatusConsumptionHostedService> _logger;
         private Task? _runTask;
         private CancellationTokenSource? _cts;
 
         public UAVStatusConsumptionHostedService(
-            IServiceScopeFactory scopeFactory,
+            IAssignmentUpdateService assignmentUpdateService,
             IUAVStatusConsumer uavStatusConsumer,
             ILogger<UAVStatusConsumptionHostedService> logger)
         {
-            _scopeFactory = scopeFactory;
+            _assignmentUpdateService = assignmentUpdateService;
             _uavStatusConsumer = uavStatusConsumer;
             _logger = logger;
         }
@@ -52,8 +52,9 @@ namespace ACM.Services.UAVStatusConsumption
             {
                 try
                 {
-                    IEnumerable<UAVStatusData> statusData =
-                        _uavStatusConsumer.ConsumeUAVStatus(stoppingToken);
+                    IEnumerable<UAVStatusData> statusData = await Task.Run(
+                        () => _uavStatusConsumer.ConsumeUAVStatus(stoppingToken),
+                        stoppingToken);
                     List<UAVStatusData> statusList = statusData.ToList();
 
                     if (statusList.Count == 0)
@@ -61,15 +62,10 @@ namespace ACM.Services.UAVStatusConsumption
                         continue;
                     }
 
-                    using (IServiceScope scope = _scopeFactory.CreateScope())
-                    {
-                        IAssignmentUpdateService assignmentUpdateService =
-                            scope.ServiceProvider.GetRequiredService<IAssignmentUpdateService>();
-                        await assignmentUpdateService.RunWithStatusAsync(
-                            statusList,
-                            stoppingToken
-                        );
-                    }
+                    await _assignmentUpdateService.RunWithStatusAsync(
+                        statusList,
+                        stoppingToken
+                    );
                 }
                 catch (OperationCanceledException)
                 {

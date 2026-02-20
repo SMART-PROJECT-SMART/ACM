@@ -9,9 +9,11 @@ namespace ACM.Services.Clients.SimulatorClient
     {
         private readonly HttpClient _httpClient;
 
-        public SimulatorClient(HttpClient httpClient)
+        public SimulatorClient(IHttpClientFactory httpClientFactory)
         {
-            _httpClient = httpClient;
+            _httpClient = httpClientFactory.CreateClient(
+                ACMConstants.HttpClients.SIMULATOR_HTTP_CLIENT
+            );
         }
 
         public async Task NotifyUavPortsChangedAsync(

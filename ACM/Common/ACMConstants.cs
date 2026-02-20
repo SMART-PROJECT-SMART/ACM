@@ -31,6 +31,8 @@ namespace ACM.Common
         public static class Scoring
         {
             public const double MIN_DISTANCE_DENOMINATOR = 1.0;
+            public const int SCORE_MAX_VALUE = 1000;
+            public const int DUMMY_COST = 1_000_000;
         }
     }
 }

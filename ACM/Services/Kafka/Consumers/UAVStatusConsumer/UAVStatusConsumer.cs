@@ -28,6 +28,14 @@ namespace ACM.Services.Kafka.Consumers.UAVStatusConsumer
                 GroupId = kafkaConfiguration.GroupId,
                 AutoOffsetReset = AutoOffsetReset.Latest,
             };
+            if (kafkaConfiguration.MaxPollIntervalMs > 0)
+            {
+                config.MaxPollIntervalMs = kafkaConfiguration.MaxPollIntervalMs;
+            }
+            if (kafkaConfiguration.AutoCommitIntervalMs > 0)
+            {
+                config.AutoCommitIntervalMs = kafkaConfiguration.AutoCommitIntervalMs;
+            }
             _disposeCts = new CancellationTokenSource();
 
             _kafkaConsumer = new ConsumerBuilder<string, string>(config)
@@ -62,38 +70,50 @@ namespace ACM.Services.Kafka.Consumers.UAVStatusConsumer
                 }
 
                 string value = consumeResult.Message.Value;
-                List<UAVStatusData>? statusList =
-                    JsonConvert.DeserializeObject<List<UAVStatusData>>(value);
-                if (statusList is null || statusList.Count == 0)
+                JsonSerializerSettings jsonSettings = new()
                 {
-                    UAVStatusData? single = JsonConvert.DeserializeObject<UAVStatusData>(value);
-                    if (single is null)
+                    MissingMemberHandling = MissingMemberHandling.Ignore,
+                };
+                string trimmed = value.TrimStart();
+                if (trimmed.StartsWith("["))
+                {
+                    List<UAVStatusData>? statusList =
+                        JsonConvert.DeserializeObject<List<UAVStatusData>>(value, jsonSettings);
+                    if (statusList is null || statusList.Count == 0)
                     {
-                        _logger.LogWarning(
-                            "Kafka consume: message could not be deserialized to UAVStatusData or array"
-                        );
+                        _logger.LogDebug("Kafka consume: empty array");
                         return [];
                     }
                     _logger.LogDebug(
-                        "Kafka consume: received status for TailId {TailId}",
-                        single.TailId
+                        "Kafka consume: received status for {Count} UAVs",
+                        statusList.Count
                     );
-                    return [single];
+                    return statusList;
                 }
 
+                UAVStatusData? single =
+                    JsonConvert.DeserializeObject<UAVStatusData>(value, jsonSettings);
+                if (single is null)
+                {
+                    _logger.LogWarning(
+                        "Kafka consume: message could not be deserialized to UAVStatusData or array"
+                    );
+                    return [];
+                }
                 _logger.LogDebug(
-                    "Kafka consume: received status for {Count} UAVs",
-                    statusList.Count
+                    "Kafka consume: received status for TailId {TailId}",
+                    single.TailId
                 );
-                return statusList;
+                return [single];
             }
             catch (OperationCanceledException)
             {
                 _logger.LogDebug("Kafka consume: cancelled");
                 return [];
             }
-            catch (ConsumeException)
+            catch (ConsumeException ex)
             {
+                _logger.LogWarning(ex, "Kafka consume error");
                 return [];
             }
         }

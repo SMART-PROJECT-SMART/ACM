@@ -15,6 +15,8 @@ using ACM.Services.ScoreCalculator.Interfaces;
 using ACM.Services.SleeveChangeHandlers;
 using ACM.Services.SleeveChangeHandlers.Handlers;
 using ACM.Services.SleeveChangeHandlers.Interfaces;
+using ACM.Services.OptimalAssignmentSolver;
+using ACM.Services.OptimalAssignmentSolver.Interfaces;
 using ACM.Services.SleeveManager;
 using ACM.Services.SleeveManager.Interfaces;
 using ACM.Services.StartUpSleeveFetcher;
@@ -75,10 +77,11 @@ namespace ACM.Extentions
                 .GetSection(ACMConstants.Configuration.DEVICE_MANAGER_CONFIG_SECTION)
                 .Get<DeviceManagerConfiguration>()!;
 
-            services.AddHttpClient<IDeviceManagerClient, DeviceManagerClient>(client =>
+            services.AddHttpClient(ACMConstants.HttpClients.DEVICE_MANAGER_HTTP_CLIENT, client =>
             {
                 client.BaseAddress = new Uri(config.BaseUrl);
             });
+            services.AddTransient<IDeviceManagerClient, DeviceManagerClient>();
             return services;
         }
 
@@ -91,11 +94,11 @@ namespace ACM.Extentions
                 .GetSection(ACMConstants.Configuration.SIMULATION_CONFIG_SECTION)
                 .Get<SimulationConfiguration>()!;
 
-            services.AddHttpClient<ISimulatorClient, SimulatorClient>(client =>
+            services.AddHttpClient(ACMConstants.HttpClients.SIMULATOR_HTTP_CLIENT, client =>
             {
                 client.BaseAddress = new Uri(config.BaseUrl);
             });
-
+            services.AddTransient<ISimulatorClient, SimulatorClient>();
             return services;
         }
 
@@ -103,7 +106,8 @@ namespace ACM.Extentions
         {
             services.AddSingleton<IScoreCalculator, DistanceScoreCalculator>();
             services.AddSingleton<IAssignmentManager, AssignmentManager>();
-            services.AddScoped<IAssignmentUpdateService, AssignmentUpdateService>();
+            services.AddSingleton<IOptimalAssignmentSolver, OptimalAssignmentSolver>();
+            services.AddSingleton<IAssignmentUpdateService, AssignmentUpdateService>();
             return services;
         }
 

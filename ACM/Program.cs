@@ -14,8 +14,7 @@ builder
 
 var app = builder.Build();
 
-app.UseAuthorization();
-
+app.UseRouting();
 app.MapControllers();
 
 app.Run();

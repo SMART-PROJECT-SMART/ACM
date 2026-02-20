@@ -1,3 +1,4 @@
+using System.Text.Json;
 using System.Net.Http.Json;
 using ACM.Common;
 using ACM.Models.Dto;
@@ -11,9 +12,11 @@ namespace ACM.Services.Clients.DeviceManagerClient
         private readonly HttpClient _httpClient;
         private readonly ILogger<DeviceManagerClient> _logger;
 
-        public DeviceManagerClient(HttpClient httpClient, ILogger<DeviceManagerClient> logger)
+        public DeviceManagerClient(
+            IHttpClientFactory httpClientFactory,
+            ILogger<DeviceManagerClient> logger)
         {
-            _httpClient = httpClient;
+            _httpClient = httpClientFactory.CreateClient(ACMConstants.HttpClients.DEVICE_MANAGER_HTTP_CLIENT);
             _logger = logger;
         }
 
@@ -82,9 +85,17 @@ namespace ACM.Services.Clients.DeviceManagerClient
             CancellationToken cancellationToken = default
         )
         {
+            JsonSerializerOptions jsonOptions = new()
+            {
+                PropertyNameCaseInsensitive = true,
+            };
             IEnumerable<SleeveDeviceManagerDto>? sleeves = await _httpClient.GetFromJsonAsync<
                 IEnumerable<SleeveDeviceManagerDto>
-            >(ACMConstants.DeviceManagerApiEndpoints.GET_ALL_SLEEVES, cancellationToken);
+            >(
+                ACMConstants.DeviceManagerApiEndpoints.GET_ALL_SLEEVES,
+                jsonOptions,
+                cancellationToken
+            );
             return sleeves ?? [];
         }
 

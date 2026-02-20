@@ -3,9 +3,8 @@ using ACM.Models.Dto;
 using ACM.Services.AssignmentManager.Interfaces;
 using ACM.Services.AssignmentUpdate.Interfaces;
 using ACM.Services.Kafka.Consumers.StatusConsumer.Interfaces;
-using ACM.Services.ScoreCalculator.Interfaces;
+using ACM.Services.OptimalAssignmentSolver.Interfaces;
 using ACM.Services.SleeveManager.Interfaces;
-using Core.Models;
 using Microsoft.Extensions.Logging;
 
 namespace ACM.Services.AssignmentUpdate
@@ -14,21 +13,21 @@ namespace ACM.Services.AssignmentUpdate
     {
         private readonly IUAVStatusConsumer _uavStatusConsumer;
         private readonly ISleeveManager _sleeveManager;
-        private readonly IScoreCalculator _scoreCalculator;
+        private readonly IOptimalAssignmentSolver _optimalAssignmentSolver;
         private readonly IAssignmentManager _assignmentManager;
         private readonly ILogger<AssignmentUpdateService> _logger;
 
         public AssignmentUpdateService(
             IUAVStatusConsumer uavStatusConsumer,
             ISleeveManager sleeveManager,
-            IScoreCalculator scoreCalculator,
+            IOptimalAssignmentSolver optimalAssignmentSolver,
             IAssignmentManager assignmentManager,
             ILogger<AssignmentUpdateService> logger
         )
         {
             _uavStatusConsumer = uavStatusConsumer;
             _sleeveManager = sleeveManager;
-            _scoreCalculator = scoreCalculator;
+            _optimalAssignmentSolver = optimalAssignmentSolver;
             _assignmentManager = assignmentManager;
             _logger = logger;
         }
@@ -77,50 +76,14 @@ namespace ACM.Services.AssignmentUpdate
                 return;
             }
 
-            Dictionary<int, Sleeve> newAssignment = ComputeBestAssignment(statusList, sleeveList);
+            Dictionary<int, Sleeve> newAssignment =
+                _optimalAssignmentSolver.Solve(statusList, sleeveList);
             _logger.LogInformation(
                 "Computed assignment for {Count} UAVs: {Assignment}",
                 newAssignment.Count,
                 string.Join("; ", newAssignment.Select(kv => $"TailId {kv.Key} -> {kv.Value.Name}"))
             );
             await _assignmentManager.SetAssignmentAsync(newAssignment, cancellationToken);
-        }
-
-        private Dictionary<int, Sleeve> ComputeBestAssignment(
-            List<UAVStatusData> statusList,
-            List<Sleeve> sleeveList
-        )
-        {
-            var assignment = new Dictionary<int, Sleeve>();
-            foreach (UAVStatusData status in statusList)
-            {
-                Sleeve? bestSleeve = null;
-                double bestScore = double.MinValue;
-                foreach (Sleeve sleeve in sleeveList)
-                {
-                    double score = _scoreCalculator.GetScore(status.Location, sleeve);
-                    if (IsBetterAssignment(score, bestScore, sleeve, bestSleeve))
-                    {
-                        bestScore = score;
-                        bestSleeve = sleeve;
-                    }
-                }
-
-                if (bestSleeve != null)
-                {
-                    assignment[status.TailId] = bestSleeve;
-                }
-            }
-
-            return assignment;
-        }
-
-        private static bool IsBetterAssignment(double score, double bestScore, Sleeve candidate, Sleeve? current)
-        {
-            return score > bestScore
-                || (score == bestScore
-                    && current != null
-                    && string.CompareOrdinal(candidate.Name, current.Name) < 0);
         }
     }
 }

@@ -103,6 +103,16 @@ namespace ACM.Services.AssignmentManager
             List<ChangedAssignmentDto> result = new();
             foreach (KeyValuePair<int, Sleeve> kv in newAssignment)
             {
+                if (kv.Value.Id == 0)
+                {
+                    _logger.LogWarning(
+                        "Skipping assignment for tail {TailId}: sleeve {SleeveName} has invalid Id 0",
+                        kv.Key,
+                        kv.Value.Name
+                    );
+                    continue;
+                }
+
                 if (
                     !_tailIdToSleeve.TryGetValue(kv.Key, out Sleeve? currentSleeve)
                     || currentSleeve.Id != kv.Value.Id
