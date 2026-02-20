@@ -10,8 +10,10 @@ namespace ACM.Services.Kafka.Consumers.UAVStatusConsumer
 {
     public class UAVStatusConsumer : IUAVStatusConsumer
     {
+        private const int DefaultPollTimeoutMs = 100;
+
         private readonly IConsumer<string, string> _kafkaConsumer;
-        private readonly int _consumeTimeoutMs;
+        private readonly int _pollTimeoutMs;
         private readonly CancellationTokenSource _disposeCts;
         private readonly ILogger<UAVStatusConsumer> _logger;
 
@@ -33,7 +35,9 @@ namespace ACM.Services.Kafka.Consumers.UAVStatusConsumer
                 .SetValueDeserializer(Deserializers.Utf8)
                 .Build();
             _kafkaConsumer.Subscribe(kafkaConfiguration.StatusUpdateTopic);
-            _consumeTimeoutMs = kafkaConfiguration.ConsumeTimeoutMs;
+            _pollTimeoutMs = kafkaConfiguration.ConsumeTimeoutMs > 0
+                ? kafkaConfiguration.ConsumeTimeoutMs
+                : DefaultPollTimeoutMs;
             _logger = logger;
         }
 
@@ -41,43 +45,55 @@ namespace ACM.Services.Kafka.Consumers.UAVStatusConsumer
             CancellationToken cancellationToken = default
         )
         {
+            if (cancellationToken.IsCancellationRequested)
+            {
+                return [];
+            }
+
             try
             {
-                using CancellationTokenSource linkedCts =
-                    CancellationTokenSource.CreateLinkedTokenSource(
-                        _disposeCts.Token,
-                        cancellationToken
-                    );
-                linkedCts.CancelAfter(_consumeTimeoutMs);
+                ConsumeResult<string, string>? consumeResult =
+                    _kafkaConsumer.Consume(TimeSpan.FromMilliseconds(_pollTimeoutMs));
 
-                ConsumeResult<string, string> uavsStatus = _kafkaConsumer.Consume(linkedCts.Token);
-
-                if (uavsStatus?.Message?.Value is null)
+                if (consumeResult?.Message?.Value is null)
                 {
                     _logger.LogDebug("Kafka consume: no message (timeout or empty)");
                     return [];
                 }
 
-                string value = uavsStatus.Message.Value;
-                List<UAVStatusData>? statusList = JsonConvert.DeserializeObject<List<UAVStatusData>>(value);
+                string value = consumeResult.Message.Value;
+                List<UAVStatusData>? statusList =
+                    JsonConvert.DeserializeObject<List<UAVStatusData>>(value);
                 if (statusList is null || statusList.Count == 0)
                 {
                     UAVStatusData? single = JsonConvert.DeserializeObject<UAVStatusData>(value);
                     if (single is null)
                     {
-                        _logger.LogWarning("Kafka consume: message could not be deserialized to UAVStatusData or array");
+                        _logger.LogWarning(
+                            "Kafka consume: message could not be deserialized to UAVStatusData or array"
+                        );
                         return [];
                     }
-                    _logger.LogDebug("Kafka consume: received status for TailId {TailId}", single.TailId);
+                    _logger.LogDebug(
+                        "Kafka consume: received status for TailId {TailId}",
+                        single.TailId
+                    );
                     return [single];
                 }
 
-                _logger.LogDebug("Kafka consume: received status for {Count} UAVs", statusList.Count);
+                _logger.LogDebug(
+                    "Kafka consume: received status for {Count} UAVs",
+                    statusList.Count
+                );
                 return statusList;
             }
             catch (OperationCanceledException)
             {
-                _logger.LogDebug("Kafka consume: cancelled (timeout or token)");
+                _logger.LogDebug("Kafka consume: cancelled");
+                return [];
+            }
+            catch (ConsumeException)
+            {
                 return [];
             }
         }

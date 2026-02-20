@@ -10,7 +10,7 @@ builder
     .AddSimulatorClient(builder.Configuration)
     .AddKafkaServices()
     .AddAssignmentServices()
-    .AddQuartzServices();
+    .AddUAVStatusConsumption();
 
 var app = builder.Build();
 

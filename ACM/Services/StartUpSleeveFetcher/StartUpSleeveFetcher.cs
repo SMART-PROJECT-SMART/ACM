@@ -1,5 +1,5 @@
 ﻿using ACM.Models.Dto;
-using ACM.Services.DeviceManagerClient.Interfaces;
+using ACM.Services.Clients.DeviceManagerClient.Interfaces;
 using ACM.Services.SleeveManager.Interfaces;
 using ACM.Services.StartUpSleeveFetcher.Interfaces;
 

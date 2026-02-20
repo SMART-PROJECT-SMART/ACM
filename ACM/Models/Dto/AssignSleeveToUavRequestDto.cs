@@ -2,13 +2,13 @@ namespace ACM.Models.Dto
 {
     public class AssignSleeveToUavRequestDto
     {
-        public AssignSleeveToUavRequestDto(int tailId, string sleeveName)
+        public AssignSleeveToUavRequestDto(int tailId, int sleeveId)
         {
             TailId = tailId;
-            SleeveName = sleeveName;
+            SleeveId = sleeveId;
         }
 
         public int TailId { get; set; }
-        public string SleeveName { get; set; }
+        public int SleeveId { get; set; }
     }
 }

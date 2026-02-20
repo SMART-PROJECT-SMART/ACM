@@ -6,7 +6,6 @@ namespace ACM.Common
         {
             public const string DEVICE_MANAGER_CONFIG_SECTION = "DeviceManager";
             public const string KAFKA_CONFIG_SECTION = "Kafka";
-            public const string QUARTZ_CONFIG_SECTION = "Quartz";
             public const string SIMULATION_CONFIG_SECTION = "Simulation";
         }
 

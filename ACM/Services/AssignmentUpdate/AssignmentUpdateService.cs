@@ -35,19 +35,23 @@ namespace ACM.Services.AssignmentUpdate
 
         public async Task RunAsync(CancellationToken cancellationToken = default)
         {
-            IEnumerable<UAVStatusData> statusDataList = _uavStatusConsumer.ConsumeUAVStatus(
-                cancellationToken
-            );
+            IEnumerable<UAVStatusData> statusDataList =
+                _uavStatusConsumer.ConsumeUAVStatus(cancellationToken);
             List<UAVStatusData> statusList = statusDataList.ToList();
+            await RunWithStatusAsync(statusList, cancellationToken);
+        }
 
-            if (statusList.Count == 0)
-            {
-                _logger.LogInformation("No UAV status consumed this run (timeout or empty topic)");
-            }
-            else
+        public async Task RunWithStatusAsync(
+            IReadOnlyList<UAVStatusData> statusData,
+            CancellationToken cancellationToken = default
+        )
+        {
+            List<UAVStatusData> statusList = statusData.ToList();
+
+            if (statusList.Count > 0)
             {
                 _logger.LogInformation(
-                    "Consumed UAV status for {Count} UAVs. TailIds: {TailIds}",
+                    "UAV status for {Count} UAVs. TailIds: {TailIds}",
                     statusList.Count,
                     string.Join(", ", statusList.Select(s => s.TailId))
                 );

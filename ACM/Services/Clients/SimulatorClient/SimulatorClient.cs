@@ -1,9 +1,9 @@
 using System.Net.Http.Json;
 using ACM.Common;
 using ACM.Models.Dto;
-using ACM.Services.SimulatorClient.Interfaces;
+using ACM.Services.Clients.SimulatorClient.Interfaces;
 
-namespace ACM.Services.SimulatorClient
+namespace ACM.Services.Clients.SimulatorClient
 {
     public class SimulatorClient : ISimulatorClient
     {
@@ -17,17 +17,15 @@ namespace ACM.Services.SimulatorClient
         public async Task NotifyUavPortsChangedAsync(
             int tailId,
             IEnumerable<int> newPorts,
-            CancellationToken cancellationToken = default)
+            CancellationToken cancellationToken = default
+        )
         {
-            var request = new UavPortsChangedRequestDto
-            {
-                TailId = tailId,
-                NewPorts = newPorts
-            };
+            var request = new UavPortsChangedRequestDto { TailId = tailId, NewPorts = newPorts };
             await _httpClient.PostAsJsonAsync(
                 ACMConstants.SimulationApiEndpoints.UAV_PORTS_CHANGED,
                 request,
-                cancellationToken);
+                cancellationToken
+            );
         }
     }
 }

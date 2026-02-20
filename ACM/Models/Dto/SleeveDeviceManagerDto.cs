@@ -1,10 +1,12 @@
-﻿using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations;
 using Core.Models;
 
 namespace ACM.Models.Dto
 {
     public class SleeveDeviceManagerDto
     {
+        public int Id { get; set; }
+
         [Required]
         public string Name { get; set; }
 
