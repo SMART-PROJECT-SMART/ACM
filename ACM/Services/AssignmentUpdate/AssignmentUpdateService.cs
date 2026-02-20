@@ -1,3 +1,4 @@
+using ACM.Models;
 using ACM.Models.Dto;
 using ACM.Services.AssignmentManager.Interfaces;
 using ACM.Services.AssignmentUpdate.Interfaces;
@@ -22,7 +23,8 @@ namespace ACM.Services.AssignmentUpdate
             ISleeveManager sleeveManager,
             IScoreCalculator scoreCalculator,
             IAssignmentManager assignmentManager,
-            ILogger<AssignmentUpdateService> logger)
+            ILogger<AssignmentUpdateService> logger
+        )
         {
             _uavStatusConsumer = uavStatusConsumer;
             _sleeveManager = sleeveManager;
@@ -33,7 +35,9 @@ namespace ACM.Services.AssignmentUpdate
 
         public async Task RunAsync(CancellationToken cancellationToken = default)
         {
-            IEnumerable<UAVStatusData> statusDataList = _uavStatusConsumer.ConsumeUAVStatus(cancellationToken);
+            IEnumerable<UAVStatusData> statusDataList = _uavStatusConsumer.ConsumeUAVStatus(
+                cancellationToken
+            );
             List<UAVStatusData> statusList = statusDataList.ToList();
 
             if (statusList.Count == 0)
@@ -45,12 +49,17 @@ namespace ACM.Services.AssignmentUpdate
                 _logger.LogInformation(
                     "Consumed UAV status for {Count} UAVs. TailIds: {TailIds}",
                     statusList.Count,
-                    string.Join(", ", statusList.Select(s => s.TailId)));
+                    string.Join(", ", statusList.Select(s => s.TailId))
+                );
             }
 
-            IEnumerable<ACM.Models.Sleeve> sleeves = _sleeveManager.GetAllSleeves();
-            List<ACM.Models.Sleeve> sleeveList = sleeves.ToList();
-            _logger.LogInformation("Sleeves available for assignment: {SleeveCount}. Names: {SleeveNames}", sleeveList.Count, string.Join(", ", sleeveList.Select(s => s.Name)));
+            IEnumerable<Sleeve> sleeves = _sleeveManager.GetAllSleeves();
+            List<Sleeve> sleeveList = sleeves.ToList();
+            _logger.LogInformation(
+                "Sleeves available for assignment: {SleeveCount}. Names: {SleeveNames}",
+                sleeveList.Count,
+                string.Join(", ", sleeveList.Select(s => s.Name))
+            );
 
             if (sleeveList.Count == 0)
             {
@@ -64,25 +73,29 @@ namespace ACM.Services.AssignmentUpdate
                 return;
             }
 
-            Dictionary<int, ACM.Models.Sleeve> newAssignment = ComputeBestAssignment(statusList, sleeveList);
-            _logger.LogInformation("Computed assignment for {Count} UAVs: {Assignment}", newAssignment.Count, string.Join("; ", newAssignment.Select(kv => $"TailId {kv.Key} -> {kv.Value.Name}")));
+            Dictionary<int, Sleeve> newAssignment = ComputeBestAssignment(statusList, sleeveList);
+            _logger.LogInformation(
+                "Computed assignment for {Count} UAVs: {Assignment}",
+                newAssignment.Count,
+                string.Join("; ", newAssignment.Select(kv => $"TailId {kv.Key} -> {kv.Value.Name}"))
+            );
             await _assignmentManager.SetAssignmentAsync(newAssignment, cancellationToken);
         }
 
-        private Dictionary<int, ACM.Models.Sleeve> ComputeBestAssignment(
+        private Dictionary<int, Sleeve> ComputeBestAssignment(
             List<UAVStatusData> statusList,
-            List<ACM.Models.Sleeve> sleeveList)
+            List<Sleeve> sleeveList
+        )
         {
-            var assignment = new Dictionary<int, ACM.Models.Sleeve>();
+            var assignment = new Dictionary<int, Sleeve>();
             foreach (UAVStatusData status in statusList)
             {
-                ACM.Models.Sleeve? bestSleeve = null;
+                Sleeve? bestSleeve = null;
                 double bestScore = double.MinValue;
-                foreach (ACM.Models.Sleeve sleeve in sleeveList)
+                foreach (Sleeve sleeve in sleeveList)
                 {
                     double score = _scoreCalculator.GetScore(status.Location, sleeve);
-                    if (score > bestScore ||
-                        (score == bestScore && bestSleeve != null && string.CompareOrdinal(sleeve.Name, bestSleeve.Name) < 0))
+                    if (IsBetterAssignment(score, bestScore, sleeve, bestSleeve))
                     {
                         bestScore = score;
                         bestSleeve = sleeve;
@@ -96,6 +109,14 @@ namespace ACM.Services.AssignmentUpdate
             }
 
             return assignment;
+        }
+
+        private static bool IsBetterAssignment(double score, double bestScore, Sleeve candidate, Sleeve? current)
+        {
+            return score > bestScore
+                || (score == bestScore
+                    && current != null
+                    && string.CompareOrdinal(candidate.Name, current.Name) < 0);
         }
     }
 }
