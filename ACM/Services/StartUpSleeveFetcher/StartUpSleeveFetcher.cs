@@ -9,27 +9,23 @@ namespace ACM.Services.StartUpSleeveFetcher
     public class StartUpSleeveFetcher : IStartUpSleeveFetcher
     {
         private readonly ISleeveManager _sleeveManager;
-        private readonly IServiceScopeFactory _serviceScopeFactory;
+        private readonly IDeviceManagerClient _deviceManagerClient;
         private readonly ILogger<StartUpSleeveFetcher> _logger;
 
         public StartUpSleeveFetcher(
             ISleeveManager sleeveManager,
-            IServiceScopeFactory serviceScopeFactory,
+            IDeviceManagerClient deviceManagerClient,
             ILogger<StartUpSleeveFetcher> logger
         )
         {
             _sleeveManager = sleeveManager;
-            _serviceScopeFactory = serviceScopeFactory;
+            _deviceManagerClient = deviceManagerClient;
             _logger = logger;
         }
 
         public async Task StartAsync(CancellationToken cancellationToken)
         {
-            using IServiceScope scope = _serviceScopeFactory.CreateScope();
-            IDeviceManagerClient deviceManagerClient =
-                scope.ServiceProvider.GetRequiredService<IDeviceManagerClient>();
-
-            IEnumerable<SleeveDeviceManagerDto> sleeves = await deviceManagerClient.GetSleevesAsync(
+            IEnumerable<SleeveDeviceManagerDto> sleeves = await _deviceManagerClient.GetSleevesAsync(
                 cancellationToken
             );
             List<SleeveDeviceManagerDto> sleeveList = sleeves.ToList();

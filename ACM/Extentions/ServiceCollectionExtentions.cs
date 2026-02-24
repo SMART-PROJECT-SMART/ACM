@@ -81,7 +81,7 @@ namespace ACM.Extentions
             {
                 client.BaseAddress = new Uri(config.BaseUrl);
             });
-            services.AddTransient<IDeviceManagerClient, DeviceManagerClient>();
+            services.AddSingleton<IDeviceManagerClient, DeviceManagerClient>();
             return services;
         }
 
