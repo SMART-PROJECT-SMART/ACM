@@ -18,7 +18,8 @@ namespace ACM.Services.UAVStatusConsumption
         public UAVStatusConsumptionHostedService(
             IAssignmentUpdateService assignmentUpdateService,
             IUAVStatusConsumer uavStatusConsumer,
-            ILogger<UAVStatusConsumptionHostedService> logger)
+            ILogger<UAVStatusConsumptionHostedService> logger
+        )
         {
             _assignmentUpdateService = assignmentUpdateService;
             _uavStatusConsumer = uavStatusConsumer;

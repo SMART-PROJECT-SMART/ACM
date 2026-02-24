@@ -1,19 +1,19 @@
 using ACM.Common;
 using ACM.Models;
 using ACM.Models.Dto;
+using ACM.Services.CostCalculator.Interfaces;
 using ACM.Services.OptimalAssignmentSolver.Interfaces;
-using ACM.Services.ScoreCalculator.Interfaces;
 using HungarianAlgorithm;
 
 namespace ACM.Services.OptimalAssignmentSolver
 {
     public class OptimalAssignmentSolver : IOptimalAssignmentSolver
     {
-        private readonly IScoreCalculator _scoreCalculator;
+        private readonly ICostCalculator _costCalculator;
 
-        public OptimalAssignmentSolver(IScoreCalculator scoreCalculator)
+        public OptimalAssignmentSolver(ICostCalculator costCalculator)
         {
-            _scoreCalculator = scoreCalculator;
+            _costCalculator = costCalculator;
         }
 
         public Dictionary<int, Sleeve> Solve(
@@ -45,15 +45,14 @@ namespace ACM.Services.OptimalAssignmentSolver
                 {
                     if (i < rows && j < cols)
                     {
-                        int score = _scoreCalculator.GetScore(
+                        costMatrix[i, j] = _costCalculator.GetCost(
                             statusList[i].Location,
                             sleeveList[j]
                         );
-                        costMatrix[i, j] = ACMConstants.Scoring.SCORE_MAX_VALUE - score;
                     }
                     else
                     {
-                        costMatrix[i, j] = ACMConstants.Scoring.DUMMY_COST;
+                        costMatrix[i, j] = ACMConstants.Assignment.DUMMY_COST;
                     }
                 }
             }

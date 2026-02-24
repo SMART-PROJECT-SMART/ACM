@@ -1,18 +1,14 @@
-using ACM.Common;
 using ACM.Models;
-using ACM.Services.ScoreCalculator.Interfaces;
+using ACM.Services.CostCalculator.Interfaces;
 using Core.Models;
 
-namespace ACM.Services.ScoreCalculator
+namespace ACM.Services.CostCalculator
 {
-    public class DistanceScoreCalculator : IScoreCalculator
+    public class DistanceCostCalculator : ICostCalculator
     {
-        public int GetScore(Location uavLocation, Sleeve sleeve)
+        public int GetCost(Location uavLocation, Sleeve sleeve)
         {
-            double distance = uavLocation.CalculateDistanceTo(sleeve.Location);
-            double denominator = ACMConstants.Scoring.MIN_DISTANCE_DENOMINATOR + distance;
-            double score = 1.0 / denominator;
-            return (int)(score * ACMConstants.Scoring.SCORE_MAX_VALUE);
+            return (int)uavLocation.CalculateDistanceTo(sleeve.Location);
         }
     }
 }

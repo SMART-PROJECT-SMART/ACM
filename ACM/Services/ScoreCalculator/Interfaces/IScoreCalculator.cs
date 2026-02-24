@@ -1,10 +1,10 @@
 using ACM.Models;
 using Core.Models;
 
-namespace ACM.Services.ScoreCalculator.Interfaces
+namespace ACM.Services.CostCalculator.Interfaces
 {
-    public interface IScoreCalculator
+    public interface ICostCalculator
     {
-        int GetScore(Location uavLocation, Sleeve sleeve);
+        int GetCost(Location uavLocation, Sleeve sleeve);
     }
 }

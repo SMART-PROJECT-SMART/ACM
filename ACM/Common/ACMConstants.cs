@@ -28,11 +28,9 @@ namespace ACM.Common
             public const string UAV_PORTS_CHANGED = "api/DeviceManagerWebhook/uav-ports-changed";
         }
 
-        public static class Scoring
+        public static class Assignment
         {
-            public const double MIN_DISTANCE_DENOMINATOR = 1.0;
-            public const int SCORE_MAX_VALUE = 1000;
-            public const int DUMMY_COST = 1_000_000;
+            public const int DUMMY_COST = int.MaxValue;
         }
     }
 }

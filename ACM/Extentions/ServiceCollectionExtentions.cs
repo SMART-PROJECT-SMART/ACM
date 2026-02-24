@@ -10,8 +10,8 @@ using ACM.Services.Clients.SimulatorClient;
 using ACM.Services.Clients.SimulatorClient.Interfaces;
 using ACM.Services.Kafka.Consumers.StatusConsumer.Interfaces;
 using ACM.Services.Kafka.Consumers.UAVStatusConsumer;
-using ACM.Services.ScoreCalculator;
-using ACM.Services.ScoreCalculator.Interfaces;
+using ACM.Services.CostCalculator;
+using ACM.Services.CostCalculator.Interfaces;
 using ACM.Services.SleeveChangeHandlers;
 using ACM.Services.SleeveChangeHandlers.Handlers;
 using ACM.Services.SleeveChangeHandlers.Interfaces;
@@ -104,7 +104,7 @@ namespace ACM.Extentions
 
         public static IServiceCollection AddAssignmentServices(this IServiceCollection services)
         {
-            services.AddSingleton<IScoreCalculator, DistanceScoreCalculator>();
+            services.AddSingleton<ICostCalculator, DistanceCostCalculator>();
             services.AddSingleton<IAssignmentManager, AssignmentManager>();
             services.AddSingleton<IOptimalAssignmentSolver, OptimalAssignmentSolver>();
             services.AddSingleton<IAssignmentUpdateService, AssignmentUpdateService>();
