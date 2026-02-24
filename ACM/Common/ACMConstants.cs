@@ -30,7 +30,7 @@ namespace ACM.Common
 
         public static class Assignment
         {
-            public const int DUMMY_COST = int.MaxValue;
+            public const int DUMMY_COST = 1_000_000_000;
         }
     }
 }
