@@ -3,21 +3,17 @@ using System.Net.Http.Json;
 using ACM.Common;
 using ACM.Models.Dto;
 using ACM.Services.Clients.DeviceManagerClient.Interfaces;
-using Microsoft.Extensions.Logging;
 
 namespace ACM.Services.Clients.DeviceManagerClient
 {
     public class DeviceManagerClient : IDeviceManagerClient
     {
         private readonly HttpClient _httpClient;
-        private readonly ILogger<DeviceManagerClient> _logger;
 
         public DeviceManagerClient(
-            IHttpClientFactory httpClientFactory,
-            ILogger<DeviceManagerClient> logger)
+            IHttpClientFactory httpClientFactory)
         {
             _httpClient = httpClientFactory.CreateClient(ACMConstants.HttpClients.DEVICE_MANAGER_HTTP_CLIENT);
-            _logger = logger;
         }
 
         public async Task AssignSleeveToUavAsync(
@@ -43,41 +39,12 @@ namespace ACM.Services.Clients.DeviceManagerClient
         {
             foreach (ChangedAssignmentDto change in changedAssignments)
             {
-                try
-                {
-                    await AssignSleeveToUavAsync(change.TailId, change.SleeveId, cancellationToken);
-                    _logger.LogInformation(
-                        "Changed sleeve for UAV tail {TailId} to sleeve {SleeveName} (id {SleeveId})",
-                        change.TailId,
-                        change.SleeveName,
-                        change.SleeveId
-                    );
-                }
-                catch (Exception ex)
-                {
-                    _logger.LogWarning(
-                        ex,
-                        "Failed to assign sleeve {SleeveName} (id {SleeveId}) to tail {TailId}",
-                        change.SleeveName,
-                        change.SleeveId,
-                        change.TailId
-                    );
-                    throw;
-                }
+                await AssignSleeveToUavAsync(change.TailId, change.SleeveId, cancellationToken);
             }
 
             foreach (int tailId in removedTailIds)
             {
-                try
-                {
-                    await ReleaseSleeveByTailIdAsync(tailId, cancellationToken);
-                    _logger.LogInformation("Released sleeve for UAV tail {TailId}", tailId);
-                }
-                catch (Exception ex)
-                {
-                    _logger.LogWarning(ex, "Failed to release sleeve for tail {TailId}", tailId);
-                    throw;
-                }
+                await ReleaseSleeveByTailIdAsync(tailId, cancellationToken);
             }
         }
 

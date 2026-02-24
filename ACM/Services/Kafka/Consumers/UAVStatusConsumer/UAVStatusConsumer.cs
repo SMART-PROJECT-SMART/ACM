@@ -2,7 +2,6 @@ using ACM.Models.Config;
 using ACM.Models.Dto;
 using ACM.Services.Kafka.Consumers.StatusConsumer.Interfaces;
 using Confluent.Kafka;
-using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Newtonsoft.Json;
 
@@ -13,11 +12,8 @@ namespace ACM.Services.Kafka.Consumers.UAVStatusConsumer
         private readonly IConsumer<string, string> _kafkaConsumer;
         private readonly int _pollTimeoutMs;
         private readonly CancellationTokenSource _disposeCts;
-        private readonly ILogger<UAVStatusConsumer> _logger;
 
-        public UAVStatusConsumer(
-            IOptions<KafkaConfiguration> kafkaOptions,
-            ILogger<UAVStatusConsumer> logger)
+        public UAVStatusConsumer(IOptions<KafkaConfiguration> kafkaOptions)
         {
             KafkaConfiguration kafkaConfiguration = kafkaOptions.Value;
             ConsumerConfig config = new()
@@ -25,8 +21,6 @@ namespace ACM.Services.Kafka.Consumers.UAVStatusConsumer
                 BootstrapServers = kafkaConfiguration.BootstrapServers,
                 GroupId = kafkaConfiguration.GroupId,
                 AutoOffsetReset = AutoOffsetReset.Latest,
-                MaxPollIntervalMs = kafkaConfiguration.MaxPollIntervalMs,
-                AutoCommitIntervalMs = kafkaConfiguration.AutoCommitIntervalMs,
             };
             _disposeCts = new CancellationTokenSource();
 
@@ -36,7 +30,6 @@ namespace ACM.Services.Kafka.Consumers.UAVStatusConsumer
                 .Build();
             _kafkaConsumer.Subscribe(kafkaConfiguration.StatusUpdateTopic);
             _pollTimeoutMs = kafkaConfiguration.ConsumeTimeoutMs;
-            _logger = logger;
         }
 
         public IEnumerable<UAVStatusData> ConsumeUAVStatus(
@@ -54,10 +47,7 @@ namespace ACM.Services.Kafka.Consumers.UAVStatusConsumer
                     _kafkaConsumer.Consume(TimeSpan.FromMilliseconds(_pollTimeoutMs));
 
                 if (consumeResult?.Message?.Value is null)
-                {
-                    _logger.LogDebug("Kafka consume: no message (timeout or empty)");
                     return [];
-                }
 
                 string value = consumeResult.Message.Value;
                 JsonSerializerSettings jsonSettings = new()
@@ -70,40 +60,24 @@ namespace ACM.Services.Kafka.Consumers.UAVStatusConsumer
                     List<UAVStatusData>? statusList =
                         JsonConvert.DeserializeObject<List<UAVStatusData>>(value, jsonSettings);
                     if (statusList is null || statusList.Count == 0)
-                    {
-                        _logger.LogDebug("Kafka consume: empty array");
                         return [];
-                    }
-                    _logger.LogDebug(
-                        "Kafka consume: received status for {Count} UAVs",
-                        statusList.Count
-                    );
+
                     return statusList;
                 }
 
                 UAVStatusData? single =
                     JsonConvert.DeserializeObject<UAVStatusData>(value, jsonSettings);
                 if (single is null)
-                {
-                    _logger.LogWarning(
-                        "Kafka consume: message could not be deserialized to UAVStatusData or array"
-                    );
                     return [];
-                }
-                _logger.LogDebug(
-                    "Kafka consume: received status for TailId {TailId}",
-                    single.TailId
-                );
+
                 return [single];
             }
             catch (OperationCanceledException)
             {
-                _logger.LogDebug("Kafka consume: cancelled");
                 return [];
             }
-            catch (ConsumeException ex)
+            catch (ConsumeException)
             {
-                _logger.LogWarning(ex, "Kafka consume error");
                 return [];
             }
         }
