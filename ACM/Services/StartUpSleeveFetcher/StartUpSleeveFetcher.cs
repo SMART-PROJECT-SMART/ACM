@@ -34,7 +34,7 @@ namespace ACM.Services.StartUpSleeveFetcher
                 sleeveList.Count,
                 string.Join(", ", sleeveList.Select(s => $"{s.Name} (Id={s.Id})"))
             );
-            _sleeveManager.SaveSleevs(sleeveList);
+            _sleeveManager.SaveSleeves(sleeveList);
         }
 
         public Task StopAsync(CancellationToken cancellationToken)

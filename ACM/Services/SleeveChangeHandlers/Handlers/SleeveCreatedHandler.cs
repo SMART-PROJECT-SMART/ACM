@@ -23,17 +23,17 @@ namespace ACM.Services.SleeveChangeHandlers.Handlers
         public bool CanHandle(CrudOperation operation) => operation is CrudOperation.Created;
 
         public async Task HandleSleeveChangeAsync(
-            string name,
+            int id,
             CancellationToken cancellationToken = default
         )
         {
             IEnumerable<SleeveDeviceManagerDto> sleeves =
                 await _deviceManagerClient.GetSleevesAsync(cancellationToken);
-            SleeveDeviceManagerDto? sleeve = sleeves.FirstOrDefault(s => s.Name == name);
+            SleeveDeviceManagerDto? sleeve = sleeves.FirstOrDefault(s => s.Id == id);
 
             if (sleeve != null)
             {
-                _sleeveManager.SaveSleevs(new[] { sleeve });
+                _sleeveManager.SaveSleeves(new[] { sleeve });
             }
         }
     }
