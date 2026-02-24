@@ -32,8 +32,8 @@ namespace ACM.Services.AssignmentUpdate
         {
             IEnumerable<UAVStatusData> statusDataList =
                 _uavStatusConsumer.ConsumeUAVStatus(cancellationToken);
-            List<UAVStatusData> statusList = statusDataList.ToList();
-            await RunWithStatusAsync(statusList, cancellationToken);
+            List<UAVStatusData> statusData = statusDataList.ToList();
+            await RunWithStatusAsync(statusData, cancellationToken);
         }
 
         public async Task RunWithStatusAsync(
@@ -41,26 +41,17 @@ namespace ACM.Services.AssignmentUpdate
             CancellationToken cancellationToken = default
         )
         {
-            List<UAVStatusData> statusList = statusData.ToList();
+            IReadOnlyList<Sleeve> sleeves = _sleeveManager.GetAllSleeves();
 
-
-            IEnumerable<Sleeve> sleeves = _sleeveManager.GetAllSleeves();
-            List<Sleeve> sleeveList = sleeves.ToList();
-
-            if (sleeveList.Count == 0)
-            {
-                return;
-            }
-
-            if (statusList.Count == 0)
+            if (sleeves.Count == 0 || statusData.Count == 0)
             {
                 return;
             }
 
             Dictionary<int, Sleeve> newAssignment =
-                _optimalAssignmentSolver.Solve(statusList, sleeveList);
+                _optimalAssignmentSolver.Solve(statusData, sleeves);
 
-            Dictionary<int, int> currentTailToSleeveId = statusList
+            Dictionary<int, int> currentTailToSleeveId = statusData
                 .ToDictionary(s => s.TailId, s => s.SleeveId);
 
             await _assignmentManager.SetAssignmentAsync(newAssignment, currentTailToSleeveId, cancellationToken);
