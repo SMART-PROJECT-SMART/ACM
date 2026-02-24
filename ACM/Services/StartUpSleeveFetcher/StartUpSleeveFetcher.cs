@@ -21,11 +21,9 @@ namespace ACM.Services.StartUpSleeveFetcher
 
         public async Task StartAsync(CancellationToken cancellationToken)
         {
-            IEnumerable<SleeveDeviceManagerDto> sleeves = await _deviceManagerClient.GetSleevesAsync(
-                cancellationToken
-            );
-            List<SleeveDeviceManagerDto> sleeveList = sleeves.ToList();
-            _sleeveManager.SaveSleeves(sleeveList);
+            IEnumerable<SleeveDeviceManagerDto> sleeves =
+                await _deviceManagerClient.GetSleevesAsync(cancellationToken);
+            _sleeveManager.SaveSleeves(sleeves);
         }
 
         public Task StopAsync(CancellationToken cancellationToken)

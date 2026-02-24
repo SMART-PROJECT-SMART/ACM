@@ -22,12 +22,13 @@ namespace ACM.Services.Clients.SimulatorClient
             CancellationToken cancellationToken = default
         )
         {
-            var request = new UavPortsChangedRequestDto { TailId = tailId, NewPorts = newPorts };
-            await _httpClient.PostAsJsonAsync(
+            UavPortsChangedRequestDto request = new() { TailId = tailId, NewPorts = newPorts };
+            HttpResponseMessage response = await _httpClient.PostAsJsonAsync(
                 ACMConstants.SimulationApiEndpoints.UAV_PORTS_CHANGED,
                 request,
                 cancellationToken
             );
+            response.EnsureSuccessStatusCode();
         }
     }
 }

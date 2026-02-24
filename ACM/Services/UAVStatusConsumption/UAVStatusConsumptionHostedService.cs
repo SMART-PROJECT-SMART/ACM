@@ -48,24 +48,17 @@ namespace ACM.Services.UAVStatusConsumption
 
         private async Task RunAsync(CancellationToken stoppingToken)
         {
+            await Task.Yield();
+
             while (!stoppingToken.IsCancellationRequested)
             {
                 try
                 {
-                    IEnumerable<UAVStatusData> statusData = await Task.Run(
-                        () => _uavStatusConsumer.ConsumeUAVStatus(stoppingToken),
-                        stoppingToken);
-                    List<UAVStatusData> statusList = statusData.ToList();
+                    List<UAVStatusData> statusList = _uavStatusConsumer
+                        .ConsumeUAVStatus(stoppingToken)
+                        .ToList();
 
-                    if (statusList.Count == 0)
-                    {
-                        continue;
-                    }
-
-                    await _assignmentUpdateService.RunWithStatusAsync(
-                        statusList,
-                        stoppingToken
-                    );
+                    await _assignmentUpdateService.RunWithStatusAsync(statusList, stoppingToken);
                 }
                 catch (OperationCanceledException)
                 {
