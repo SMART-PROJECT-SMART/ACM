@@ -10,8 +10,6 @@ namespace ACM.Services.Kafka.Consumers.UAVStatusConsumer
 {
     public class UAVStatusConsumer : IUAVStatusConsumer
     {
-        private const int DefaultPollTimeoutMs = 100;
-
         private readonly IConsumer<string, string> _kafkaConsumer;
         private readonly int _pollTimeoutMs;
         private readonly CancellationTokenSource _disposeCts;
@@ -27,15 +25,9 @@ namespace ACM.Services.Kafka.Consumers.UAVStatusConsumer
                 BootstrapServers = kafkaConfiguration.BootstrapServers,
                 GroupId = kafkaConfiguration.GroupId,
                 AutoOffsetReset = AutoOffsetReset.Latest,
+                MaxPollIntervalMs = kafkaConfiguration.MaxPollIntervalMs,
+                AutoCommitIntervalMs = kafkaConfiguration.AutoCommitIntervalMs,
             };
-            if (kafkaConfiguration.MaxPollIntervalMs > 0)
-            {
-                config.MaxPollIntervalMs = kafkaConfiguration.MaxPollIntervalMs;
-            }
-            if (kafkaConfiguration.AutoCommitIntervalMs > 0)
-            {
-                config.AutoCommitIntervalMs = kafkaConfiguration.AutoCommitIntervalMs;
-            }
             _disposeCts = new CancellationTokenSource();
 
             _kafkaConsumer = new ConsumerBuilder<string, string>(config)
@@ -43,9 +35,7 @@ namespace ACM.Services.Kafka.Consumers.UAVStatusConsumer
                 .SetValueDeserializer(Deserializers.Utf8)
                 .Build();
             _kafkaConsumer.Subscribe(kafkaConfiguration.StatusUpdateTopic);
-            _pollTimeoutMs = kafkaConfiguration.ConsumeTimeoutMs > 0
-                ? kafkaConfiguration.ConsumeTimeoutMs
-                : DefaultPollTimeoutMs;
+            _pollTimeoutMs = kafkaConfiguration.ConsumeTimeoutMs;
             _logger = logger;
         }
 
