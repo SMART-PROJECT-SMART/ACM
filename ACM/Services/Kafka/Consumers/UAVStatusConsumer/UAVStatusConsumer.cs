@@ -12,6 +12,7 @@ namespace ACM.Services.Kafka.Consumers.UAVStatusConsumer
         private readonly IConsumer<string, string> _kafkaConsumer;
         private readonly int _pollTimeoutMs;
         private readonly CancellationTokenSource _disposeCts;
+        private readonly JsonSerializerSettings _jsonSettings;
 
         public UAVStatusConsumer(IOptions<KafkaConfiguration> kafkaOptions)
         {
@@ -22,7 +23,12 @@ namespace ACM.Services.Kafka.Consumers.UAVStatusConsumer
                 GroupId = kafkaConfiguration.GroupId,
                 AutoOffsetReset = AutoOffsetReset.Latest,
             };
+
             _disposeCts = new CancellationTokenSource();
+            _jsonSettings = new JsonSerializerSettings
+            {
+                MissingMemberHandling = MissingMemberHandling.Ignore,
+            };
 
             _kafkaConsumer = new ConsumerBuilder<string, string>(config)
                 .SetKeyDeserializer(Deserializers.Utf8)
@@ -36,29 +42,28 @@ namespace ACM.Services.Kafka.Consumers.UAVStatusConsumer
             CancellationToken cancellationToken = default
         )
         {
-            if (cancellationToken.IsCancellationRequested)
-            {
-                return [];
-            }
+            using CancellationTokenSource linkedCts = CancellationTokenSource.CreateLinkedTokenSource(
+                cancellationToken,
+                _disposeCts.Token
+            );
 
             try
             {
                 ConsumeResult<string, string>? consumeResult =
                     _kafkaConsumer.Consume(TimeSpan.FromMilliseconds(_pollTimeoutMs));
 
+                linkedCts.Token.ThrowIfCancellationRequested();
+
                 if (consumeResult?.Message?.Value is null)
                     return [];
 
                 string value = consumeResult.Message.Value;
-                JsonSerializerSettings jsonSettings = new()
-                {
-                    MissingMemberHandling = MissingMemberHandling.Ignore,
-                };
                 string trimmed = value.TrimStart();
+
                 if (trimmed.StartsWith("["))
                 {
                     List<UAVStatusData>? statusList =
-                        JsonConvert.DeserializeObject<List<UAVStatusData>>(value, jsonSettings);
+                        JsonConvert.DeserializeObject<List<UAVStatusData>>(value, _jsonSettings);
                     if (statusList is null || statusList.Count == 0)
                         return [];
 
@@ -66,7 +71,7 @@ namespace ACM.Services.Kafka.Consumers.UAVStatusConsumer
                 }
 
                 UAVStatusData? single =
-                    JsonConvert.DeserializeObject<UAVStatusData>(value, jsonSettings);
+                    JsonConvert.DeserializeObject<UAVStatusData>(value, _jsonSettings);
                 if (single is null)
                     return [];
 

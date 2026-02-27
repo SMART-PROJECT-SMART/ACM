@@ -49,8 +49,6 @@ namespace ACM.Services.UAVStatusConsumption
 
         private async Task RunAsync(CancellationToken stoppingToken)
         {
-            await Task.Yield();
-
             while (!stoppingToken.IsCancellationRequested)
             {
                 try

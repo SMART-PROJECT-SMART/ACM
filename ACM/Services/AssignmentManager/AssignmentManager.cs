@@ -3,24 +3,23 @@ using ACM.Models.Dto;
 using ACM.Services.AssignmentManager.Interfaces;
 using ACM.Services.Clients.DeviceManagerClient.Interfaces;
 using ACM.Services.Clients.SimulatorClient.Interfaces;
-using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 
 namespace ACM.Services.AssignmentManager
 {
     public class AssignmentManager : IAssignmentManager
     {
-        private readonly IServiceScopeFactory _scopeFactory;
+        private readonly IDeviceManagerClient _deviceManagerClient;
         private readonly ISimulatorClient _simulatorClient;
         private readonly ILogger<AssignmentManager> _logger;
 
         public AssignmentManager(
-            IServiceScopeFactory scopeFactory,
+            IDeviceManagerClient deviceManagerClient,
             ISimulatorClient simulatorClient,
             ILogger<AssignmentManager> logger
         )
         {
-            _scopeFactory = scopeFactory;
+            _deviceManagerClient = deviceManagerClient;
             _simulatorClient = simulatorClient;
             _logger = logger;
         }
@@ -48,16 +47,11 @@ namespace ACM.Services.AssignmentManager
                 return;
             }
 
-            using (IServiceScope scope = _scopeFactory.CreateScope())
-            {
-                IDeviceManagerClient deviceManagerClient =
-                    scope.ServiceProvider.GetRequiredService<IDeviceManagerClient>();
-                await deviceManagerClient.ApplyAssignmentChangesAsync(
-                    changedAssignments,
-                    new HashSet<int>(),
-                    cancellationToken
-                );
-            }
+            await _deviceManagerClient.ApplyAssignmentChangesAsync(
+                changedAssignments,
+                new HashSet<int>(),
+                cancellationToken
+            );
 
             foreach (ChangedAssignmentDto change in changedAssignments)
             {

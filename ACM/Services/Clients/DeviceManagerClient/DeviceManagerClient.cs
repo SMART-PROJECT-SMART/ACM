@@ -55,14 +55,21 @@ namespace ACM.Services.Clients.DeviceManagerClient
             CancellationToken cancellationToken = default
         )
         {
-            IEnumerable<SleeveDeviceManagerDto>? sleeves = await _httpClient.GetFromJsonAsync<
-                IEnumerable<SleeveDeviceManagerDto>
-            >(
-                ACMConstants.DeviceManagerApiEndpoints.GET_ALL_SLEEVES,
-                _jsonSerializerOptions,
-                cancellationToken
-            );
-            return sleeves ?? [];
+            try
+            {
+                IEnumerable<SleeveDeviceManagerDto>? sleeves = await _httpClient.GetFromJsonAsync<
+                    IEnumerable<SleeveDeviceManagerDto>
+                >(
+                    ACMConstants.DeviceManagerApiEndpoints.GET_ALL_SLEEVES,
+                    _jsonSerializerOptions,
+                    cancellationToken
+                );
+                return sleeves ?? [];
+            }
+            catch (Exception)
+            {
+                return [];
+            }
         }
 
         public async Task ReleaseSleeveByTailIdAsync(
@@ -74,7 +81,11 @@ namespace ACM.Services.Clients.DeviceManagerClient
                 ACMConstants.DeviceManagerApiEndpoints.RELEASE_SLEEVE_BY_TAIL_ID,
                 tailId
             );
-            HttpResponseMessage response = await _httpClient.PostAsync(path, null, cancellationToken);
+            HttpResponseMessage response = await _httpClient.PostAsync(
+                path,
+                null,
+                cancellationToken
+            );
             response.EnsureSuccessStatusCode();
         }
     }
