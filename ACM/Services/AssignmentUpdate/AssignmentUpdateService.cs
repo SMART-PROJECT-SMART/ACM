@@ -41,17 +41,20 @@ namespace ACM.Services.AssignmentUpdate
             CancellationToken cancellationToken = default
         )
         {
-            IReadOnlyList<Sleeve> sleeves = _sleeveManager.GetAllSleeves();
+            IReadOnlyList<Sleeve> sleeves = _sleeveManager.GetAllSleeves()
+                .OrderBy(s => s.Id).ToList();
+            List<UAVStatusData> sortedStatus = statusData
+                .OrderBy(s => s.TailId).ToList();
 
-            if (sleeves.Count == 0 || statusData.Count == 0)
+            if (sleeves.Count == 0 || sortedStatus.Count == 0)
             {
                 return;
             }
 
             Dictionary<int, Sleeve> newAssignment =
-                _optimalAssignmentSolver.Solve(statusData, sleeves);
+                _optimalAssignmentSolver.Solve(sortedStatus, sleeves);
 
-            Dictionary<int, int> currentTailToSleeveId = statusData
+            Dictionary<int, int> currentTailToSleeveId = sortedStatus
                 .ToDictionary(s => s.TailId, s => s.SleeveId);
 
             await _assignmentManager.SetAssignmentAsync(newAssignment, currentTailToSleeveId, cancellationToken);

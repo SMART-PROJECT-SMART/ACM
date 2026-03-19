@@ -31,6 +31,7 @@ namespace ACM.Common
         public static class Assignment
         {
             public const int DUMMY_COST = 1_000_000_000;
+            public const double COST_SCALE_FACTOR = 100_000;
         }
     }
 }
