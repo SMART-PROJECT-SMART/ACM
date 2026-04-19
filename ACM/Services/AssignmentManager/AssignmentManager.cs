@@ -1,3 +1,4 @@
+using ACM.Common;
 using ACM.Models;
 using ACM.Models.Dto;
 using ACM.Services.AssignmentManager.Interfaces;
@@ -53,31 +54,12 @@ namespace ACM.Services.AssignmentManager
                 cancellationToken
             );
 
-            foreach (ChangedAssignmentDto change in changedAssignments)
-            {
-                try
-                {
-                    await _simulatorClient.NotifyUavPortsChangedAsync(
-                        change.TailId,
-                        change.NewPorts,
-                        cancellationToken
-                    );
-                    _logger.LogInformation(
-                        "Notified simulator of port change for UAV tail {TailId}, sleeve {SleeveName}",
-                        change.TailId,
-                        change.SleeveName
-                    );
-                }
-                catch (Exception ex)
-                {
-                    _logger.LogWarning(
-                        ex,
-                        "Failed to notify simulator of port change for UAV tail {TailId}, sleeve {SleeveName}",
-                        change.TailId,
-                        change.SleeveName
-                    );
-                }
-            }
+            UavPortsChangedBatchRequestDto batchRequest = BuildBatchRequest(changedAssignments);
+            await _simulatorClient.NotifyUavPortsChangedBatchAsync(batchRequest, cancellationToken);
+            _logger.LogInformation(
+                "Notified simulator of batched port change for {ChangedCount} UAVs",
+                batchRequest.Changes.Count()
+            );
         }
 
         private List<ChangedAssignmentDto> CollectChangedAssignments(
@@ -90,12 +72,9 @@ namespace ACM.Services.AssignmentManager
             {
                 if (kv.Value.Id == 0)
                 {
-                    _logger.LogWarning(
-                        "Skipping assignment for tail {TailId}: sleeve {SleeveName} has invalid Id 0",
-                        kv.Key,
-                        kv.Value.Name
+                    throw new InvalidOperationException(
+                        string.Format(ACMConstants.RemapErrorMessages.INVALID_SLEEVE_ID, kv.Key)
                     );
-                    continue;
                 }
 
                 bool hasCurrentSleeve = currentTailToSleeveId.TryGetValue(kv.Key, out int currentSleeveId);
@@ -115,6 +94,82 @@ namespace ACM.Services.AssignmentManager
             }
 
             return result;
+        }
+
+        private UavPortsChangedBatchRequestDto BuildBatchRequest(
+            IEnumerable<ChangedAssignmentDto> changedAssignments
+        )
+        {
+            HashSet<int> usedTargetPorts = new();
+            List<UavPortsChangedRequestDto> changes = changedAssignments
+                .Select(change => BuildAndValidateChange(change, usedTargetPorts))
+                .ToList();
+            return new UavPortsChangedBatchRequestDto { Changes = changes };
+        }
+
+        private UavPortsChangedRequestDto BuildAndValidateChange(
+            ChangedAssignmentDto change,
+            HashSet<int> usedTargetPorts
+        )
+        {
+            List<int> ports = (change.NewPorts ?? []).ToList();
+            ValidatePortCount(change.TailId, ports);
+            ValidatePortUniqueness(change.TailId, ports);
+            ValidatePortRange(change.TailId, ports);
+            ValidateBatchPortUniqueness(ports, usedTargetPorts);
+            return new UavPortsChangedRequestDto { TailId = change.TailId, NewPorts = ports };
+        }
+
+        private void ValidatePortCount(int tailId, IReadOnlyCollection<int> ports)
+        {
+            if (ports.Count != ACMConstants.Remap.EXPECTED_SLEEVE_PORT_COUNT)
+            {
+                throw new InvalidOperationException(
+                    string.Format(ACMConstants.RemapErrorMessages.INVALID_PORT_PAIR_COUNT, tailId)
+                );
+            }
+        }
+
+        private void ValidatePortUniqueness(int tailId, IReadOnlyList<int> ports)
+        {
+            if (ports[0] == ports[1])
+            {
+                throw new InvalidOperationException(
+                    string.Format(ACMConstants.RemapErrorMessages.DUPLICATE_PORT_IN_PAIR, tailId)
+                );
+            }
+        }
+
+        private void ValidatePortRange(int tailId, IEnumerable<int> ports)
+        {
+            foreach (int port in ports)
+            {
+                if (
+                    port < ACMConstants.Remap.MIN_PORT_NUMBER
+                    || port > ACMConstants.Remap.MAX_PORT_NUMBER
+                )
+                {
+                    throw new InvalidOperationException(
+                        string.Format(ACMConstants.RemapErrorMessages.PORT_OUT_OF_RANGE, tailId)
+                    );
+                }
+            }
+        }
+
+        private void ValidateBatchPortUniqueness(
+            IEnumerable<int> ports,
+            HashSet<int> usedTargetPorts
+        )
+        {
+            foreach (int port in ports)
+            {
+                if (!usedTargetPorts.Add(port))
+                {
+                    throw new InvalidOperationException(
+                        string.Format(ACMConstants.RemapErrorMessages.DUPLICATE_TARGET_PORT, port)
+                    );
+                }
+            }
         }
     }
 }

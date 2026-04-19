@@ -26,6 +26,29 @@ namespace ACM.Common
         public static class SimulationApiEndpoints
         {
             public const string UAV_PORTS_CHANGED = "api/DeviceManagerWebhook/uav-ports-changed";
+            public const string UAV_PORTS_CHANGED_BATCH =
+                "api/DeviceManagerWebhook/uavs-ports-changed-batch";
+        }
+
+        public static class Remap
+        {
+            public const int EXPECTED_SLEEVE_PORT_COUNT = 2;
+            public const int MIN_PORT_NUMBER = 8000;
+            public const int MAX_PORT_NUMBER = 8999;
+        }
+
+        public static class RemapErrorMessages
+        {
+            public const string INVALID_SLEEVE_ID =
+                "Assignment contains invalid sleeve id for tail {0}.";
+            public const string INVALID_PORT_PAIR_COUNT =
+                "Assignment contains invalid port pair count for tail {0}.";
+            public const string DUPLICATE_PORT_IN_PAIR =
+                "Assignment contains duplicate port in pair for tail {0}.";
+            public const string PORT_OUT_OF_RANGE =
+                "Assignment contains out-of-range port for tail {0}.";
+            public const string DUPLICATE_TARGET_PORT =
+                "Assignment contains duplicate target port {0} across remap batch.";
         }
 
         public static class Assignment

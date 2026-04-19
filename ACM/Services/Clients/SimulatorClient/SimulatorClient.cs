@@ -30,5 +30,26 @@ namespace ACM.Services.Clients.SimulatorClient
             );
             response.EnsureSuccessStatusCode();
         }
+
+        public async Task NotifyUavPortsChangedBatchAsync(
+            UavPortsChangedBatchRequestDto request,
+            CancellationToken cancellationToken = default
+        )
+        {
+            HttpResponseMessage response = await _httpClient.PostAsJsonAsync(
+                ACMConstants.SimulationApiEndpoints.UAV_PORTS_CHANGED_BATCH,
+                request,
+                cancellationToken
+            );
+            if (response.IsSuccessStatusCode)
+            {
+                return;
+            }
+
+            string responseBody = await response.Content.ReadAsStringAsync(cancellationToken);
+            throw new HttpRequestException(
+                $"Batch remap request failed with status {(int)response.StatusCode} ({response.StatusCode}). Body: {responseBody}"
+            );
+        }
     }
 }
