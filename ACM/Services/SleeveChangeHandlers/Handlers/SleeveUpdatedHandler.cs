@@ -1,5 +1,5 @@
 using ACM.Models.Dto;
-using ACM.Services.DeviceManagerClient.Interfaces;
+using ACM.Services.Clients.DeviceManagerClient.Interfaces;
 using ACM.Services.SleeveChangeHandlers.Interfaces;
 using ACM.Services.SleeveManager.Interfaces;
 using Core.Common.Enums;
@@ -13,7 +13,8 @@ namespace ACM.Services.SleeveChangeHandlers.Handlers
 
         public SleeveUpdatedHandler(
             ISleeveManager sleeveManager,
-            IDeviceManagerClient deviceManagerClient)
+            IDeviceManagerClient deviceManagerClient
+        )
         {
             _sleeveManager = sleeveManager;
             _deviceManagerClient = deviceManagerClient;
@@ -21,25 +22,31 @@ namespace ACM.Services.SleeveChangeHandlers.Handlers
 
         public bool CanHandle(CrudOperation operation) => operation is CrudOperation.Updated;
 
-        public async Task HandleSleeveChangeAsync(string name, CancellationToken cancellationToken = default)
+        public async Task HandleSleeveChangeAsync(
+            int id,
+            CancellationToken cancellationToken = default
+        )
         {
             IEnumerable<SleeveDeviceManagerDto> sleeves =
                 await _deviceManagerClient.GetSleevesAsync(cancellationToken);
-            SleeveDeviceManagerDto? sleeve = sleeves.FirstOrDefault(s => s.Name == name);
+            SleeveDeviceManagerDto? sleeve = sleeves.FirstOrDefault(s => s.Id == id);
 
             if (sleeve != null)
             {
-                _sleeveManager.UpdateSleeves(new UpdateSleeveDto
-                {
-                    SleevesToUpdate = new[]
+                _sleeveManager.UpdateSleeves(
+                    new UpdateSleeveDto
                     {
-                        new SleeveUpdateEntry
+                        SleevesToUpdate = new[]
                         {
-                            Name = name,
-                            PortNumbers = sleeve.PortNumbers.ToList()
-                        }
+                            new SleeveUpdateEntry
+                            {
+                                Id = id,
+                                NewName = sleeve.Name,
+                                PortNumbers = sleeve.PortNumbers.ToList(),
+                            },
+                        },
                     }
-                });
+                );
             }
         }
     }

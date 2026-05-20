@@ -1,5 +1,5 @@
-﻿using ACM.Models.Dto;
-using ACM.Services.DeviceManagerClient.Interfaces;
+using ACM.Models.Dto;
+using ACM.Services.Clients.DeviceManagerClient.Interfaces;
 using ACM.Services.SleeveManager.Interfaces;
 using ACM.Services.StartUpSleeveFetcher.Interfaces;
 
@@ -8,27 +8,22 @@ namespace ACM.Services.StartUpSleeveFetcher
     public class StartUpSleeveFetcher : IStartUpSleeveFetcher
     {
         private readonly ISleeveManager _sleeveManager;
-        private readonly IServiceScopeFactory _serviceScopeFactory;
+        private readonly IDeviceManagerClient _deviceManagerClient;
 
         public StartUpSleeveFetcher(
             ISleeveManager sleeveManager,
-            IServiceScopeFactory serviceScopeFactory
+            IDeviceManagerClient deviceManagerClient
         )
         {
             _sleeveManager = sleeveManager;
-            _serviceScopeFactory = serviceScopeFactory;
+            _deviceManagerClient = deviceManagerClient;
         }
 
         public async Task StartAsync(CancellationToken cancellationToken)
         {
-            using IServiceScope scope = _serviceScopeFactory.CreateScope();
-            IDeviceManagerClient deviceManagerClient =
-                scope.ServiceProvider.GetRequiredService<IDeviceManagerClient>();
-
-            IEnumerable<SleeveDeviceManagerDto> sleeves = await deviceManagerClient.GetSleevesAsync(
-                cancellationToken
-            );
-            _sleeveManager.SaveSleevs(sleeves);
+            IEnumerable<SleeveDeviceManagerDto> sleeves =
+                await _deviceManagerClient.GetSleevesAsync(cancellationToken);
+            _sleeveManager.SaveSleeves(sleeves);
         }
 
         public Task StopAsync(CancellationToken cancellationToken)

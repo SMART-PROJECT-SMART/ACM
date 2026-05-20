@@ -16,11 +16,11 @@ namespace ACM.Services.SleeveChangeHandlers.Handlers
 
         public bool CanHandle(CrudOperation operation) => operation is CrudOperation.Deleted;
 
-        public Task HandleSleeveChangeAsync(string name, CancellationToken cancellationToken = default)
+        public Task HandleSleeveChangeAsync(int id, CancellationToken cancellationToken = default)
         {
             _sleeveManager.DeleteSleeves(new DeleteSleeveDto
             {
-                SleevsToDelete = new[] { name }
+                SleeveIdsToDelete = new[] { id }
             });
 
             return Task.CompletedTask;

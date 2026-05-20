@@ -2,16 +2,19 @@ using ACM.Extentions;
 
 var builder = WebApplication.CreateBuilder(args);
 
-builder.Services
-    .AddWebApi()
+builder
+    .Services.AddWebApi()
     .AddAppConfiguration(builder.Configuration)
     .AddSleeveServices()
-    .AddDeviceManagerClient(builder.Configuration);
+    .AddDeviceManagerClient(builder.Configuration)
+    .AddSimulatorClient(builder.Configuration)
+    .AddKafkaServices()
+    .AddAssignmentServices()
+    .AddUAVStatusConsumption();
 
 var app = builder.Build();
 
-app.UseAuthorization();
-
+app.UseRouting();
 app.MapControllers();
 
 app.Run();

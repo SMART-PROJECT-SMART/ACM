@@ -1,14 +1,27 @@
-﻿using ACM.Common;
+using ACM.Common;
 using ACM.Models.Config;
-using ACM.Services.DeviceManagerClient;
-using ACM.Services.DeviceManagerClient.Interfaces;
+using ACM.Services.AssignmentManager;
+using ACM.Services.AssignmentManager.Interfaces;
+using ACM.Services.AssignmentUpdate;
+using ACM.Services.AssignmentUpdate.Interfaces;
+using ACM.Services.Clients.DeviceManagerClient;
+using ACM.Services.Clients.DeviceManagerClient.Interfaces;
+using ACM.Services.Clients.SimulatorClient;
+using ACM.Services.Clients.SimulatorClient.Interfaces;
+using ACM.Services.Kafka.Consumers.StatusConsumer.Interfaces;
+using ACM.Services.Kafka.Consumers.UAVStatusConsumer;
+using ACM.Services.CostCalculator;
+using ACM.Services.CostCalculator.Interfaces;
 using ACM.Services.SleeveChangeHandlers;
 using ACM.Services.SleeveChangeHandlers.Handlers;
 using ACM.Services.SleeveChangeHandlers.Interfaces;
+using ACM.Services.OptimalAssignmentSolver;
+using ACM.Services.OptimalAssignmentSolver.Interfaces;
 using ACM.Services.SleeveManager;
 using ACM.Services.SleeveManager.Interfaces;
 using ACM.Services.StartUpSleeveFetcher;
 using ACM.Services.StartUpSleeveFetcher.Interfaces;
+using ACM.Services.UAVStatusConsumption;
 
 namespace ACM.Extentions
 {
@@ -21,9 +34,20 @@ namespace ACM.Extentions
             return services;
         }
 
-        public static IServiceCollection AddAppConfiguration(this IServiceCollection services, IConfiguration configuration)
+        public static IServiceCollection AddAppConfiguration(
+            this IServiceCollection services,
+            IConfiguration configuration
+        )
         {
-            services.Configure<DeviceManagerConfiguration>(configuration.GetSection(ACMConstants.Configuration.DEVICE_MANAGER_CONFIG_SECTION));
+            services.Configure<KafkaConfiguration>(
+                configuration.GetSection(ACMConstants.Configuration.KAFKA_CONFIG_SECTION)
+            );
+            services.Configure<DeviceManagerConfiguration>(
+                configuration.GetSection(ACMConstants.Configuration.DEVICE_MANAGER_CONFIG_SECTION)
+            );
+            services.Configure<SimulationConfiguration>(
+                configuration.GetSection(ACMConstants.Configuration.SIMULATION_CONFIG_SECTION)
+            );
             return services;
         }
 
@@ -38,7 +62,16 @@ namespace ACM.Extentions
             return services;
         }
 
-        public static IServiceCollection AddDeviceManagerClient(this IServiceCollection services, IConfiguration configuration)
+        public static IServiceCollection AddKafkaServices(this IServiceCollection services)
+        {
+            services.AddSingleton<IUAVStatusConsumer, UAVStatusConsumer>();
+            return services;
+        }
+
+        public static IServiceCollection AddDeviceManagerClient(
+            this IServiceCollection services,
+            IConfiguration configuration
+        )
         {
             DeviceManagerConfiguration config = configuration
                 .GetSection(ACMConstants.Configuration.DEVICE_MANAGER_CONFIG_SECTION)
@@ -48,8 +81,39 @@ namespace ACM.Extentions
             {
                 client.BaseAddress = new Uri(config.BaseUrl);
             });
+            services.AddSingleton<IDeviceManagerClient, DeviceManagerClient>();
+            return services;
+        }
 
-            services.AddScoped<IDeviceManagerClient, DeviceManagerClient>();
+        public static IServiceCollection AddSimulatorClient(
+            this IServiceCollection services,
+            IConfiguration configuration
+        )
+        {
+            SimulationConfiguration config = configuration
+                .GetSection(ACMConstants.Configuration.SIMULATION_CONFIG_SECTION)
+                .Get<SimulationConfiguration>()!;
+
+            services.AddHttpClient(ACMConstants.HttpClients.SIMULATOR_HTTP_CLIENT, client =>
+            {
+                client.BaseAddress = new Uri(config.BaseUrl);
+            });
+            services.AddTransient<ISimulatorClient, SimulatorClient>();
+            return services;
+        }
+
+        public static IServiceCollection AddAssignmentServices(this IServiceCollection services)
+        {
+            services.AddSingleton<ICostCalculator, DistanceCostCalculator>();
+            services.AddSingleton<IAssignmentManager, AssignmentManager>();
+            services.AddSingleton<IOptimalAssignmentSolver, OptimalAssignmentSolver>();
+            services.AddSingleton<IAssignmentUpdateService, AssignmentUpdateService>();
+            return services;
+        }
+
+        public static IServiceCollection AddUAVStatusConsumption(this IServiceCollection services)
+        {
+            services.AddHostedService<UAVStatusConsumptionHostedService>();
             return services;
         }
     }

@@ -1,12 +1,13 @@
-﻿using ACM.Models;
+using ACM.Models;
 using ACM.Models.Dto;
 
 namespace ACM.Services.SleeveManager.Interfaces
 {
     public interface ISleeveManager
     {
-        public void SaveSleevs(IEnumerable<SleeveDeviceManagerDto> sleeves);
-        public void DeleteSleeves(DeleteSleeveDto deleteSleeveDto);
-        public void UpdateSleeves(UpdateSleeveDto updateSleeveDto);
+        IReadOnlyList<Sleeve> GetAllSleeves();
+        void SaveSleeves(IEnumerable<SleeveDeviceManagerDto> sleeves);
+        void DeleteSleeves(DeleteSleeveDto deleteSleeveDto);
+        void UpdateSleeves(UpdateSleeveDto updateSleeveDto);
     }
 }

@@ -1,4 +1,4 @@
-﻿using ACM.Models;
+using ACM.Models;
 using ACM.Models.Dto;
 
 namespace ACM.Extentions
@@ -8,6 +8,7 @@ namespace ACM.Extentions
         public static Sleeve ToModel(this SleeveDeviceManagerDto sleeveDeviceManagerDto)
         {
             return new Sleeve(
+                sleeveDeviceManagerDto.Id,
                 sleeveDeviceManagerDto.Name,
                 sleeveDeviceManagerDto.Location,
                 sleeveDeviceManagerDto.PortNumbers

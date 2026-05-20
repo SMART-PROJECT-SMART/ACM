@@ -8,26 +8,32 @@ namespace ACM.Services.SleeveManager
 {
     public class SleeveManager : ISleeveManager
     {
-        private readonly ConcurrentDictionary<string, Sleeve> _sleevesByName;
+        private readonly ConcurrentDictionary<int, Sleeve> _sleevesById;
 
         public SleeveManager()
         {
-            _sleevesByName = new ConcurrentDictionary<string, Sleeve>();
+            _sleevesById = new ConcurrentDictionary<int, Sleeve>();
+        }
+
+        public IReadOnlyList<Sleeve> GetAllSleeves()
+        {
+            return _sleevesById.Values.ToList();
         }
 
         public void DeleteSleeves(DeleteSleeveDto deleteSleeveDto)
         {
-            foreach (string sleeveName in deleteSleeveDto.SleevsToDelete)
+            foreach (int id in deleteSleeveDto.SleeveIdsToDelete)
             {
-                _sleevesByName.TryRemove(sleeveName, out _);
+                _sleevesById.TryRemove(id, out _);
             }
         }
 
-        public void SaveSleevs(IEnumerable<SleeveDeviceManagerDto> sleeves)
+        public void SaveSleeves(IEnumerable<SleeveDeviceManagerDto> sleeves)
         {
             foreach (SleeveDeviceManagerDto sleeveDto in sleeves)
             {
-                _sleevesByName.TryAdd(sleeveDto.Name, sleeveDto.ToModel());
+                Sleeve sleeve = sleeveDto.ToModel();
+                _sleevesById[sleeve.Id] = sleeve;
             }
         }
 
@@ -35,10 +41,10 @@ namespace ACM.Services.SleeveManager
         {
             foreach (SleeveUpdateEntry entry in updateSleeveDto.SleevesToUpdate)
             {
-                if (_sleevesByName.TryGetValue(entry.Name, out Sleeve? sleeve))
+                if (_sleevesById.TryGetValue(entry.Id, out Sleeve? sleeve))
                 {
                     UpdatePortNumbers(sleeve, entry);
-                    RenameSleeve(sleeve, entry);
+                    UpdateName(sleeve, entry);
                 }
             }
         }
@@ -51,15 +57,11 @@ namespace ACM.Services.SleeveManager
             }
         }
 
-        private void RenameSleeve(Sleeve sleeve, SleeveUpdateEntry entry)
+        private void UpdateName(Sleeve sleeve, SleeveUpdateEntry entry)
         {
-            if (entry.NewName is not null && entry.NewName != entry.Name)
+            if (entry.NewName is not null && entry.NewName != sleeve.Name)
             {
-                if (_sleevesByName.TryRemove(entry.Name, out _))
-                {
-                    sleeve.Name = entry.NewName;
-                    _sleevesByName.TryAdd(entry.NewName, sleeve);
-                }
+                sleeve.Name = entry.NewName;
             }
         }
     }
